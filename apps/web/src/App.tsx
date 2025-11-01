@@ -1,12 +1,33 @@
 import React, { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { FieldVisit } from './components/FieldVisit';
 import { ChatDrawer } from './components/ChatDrawer';
 import { PasswordPrompt } from './components/PasswordPrompt';
 import { outbox } from './lib/outbox';
+import { geminiNano } from './lib/llm/GeminiNano';
 
 function App() {
   const [chatOpen, setChatOpen] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+
+  // Initialize Gemini Nano on Android devices
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      console.log('[App] Initializing Gemini Nano...');
+      geminiNano.checkAvailability()
+        .then((available) => {
+          if (available) {
+            console.log('[App] Gemini Nano available, initializing...');
+            return geminiNano.initialize();
+          } else {
+            console.warn('[App] Gemini Nano not available on this device');
+          }
+        })
+        .catch((err) => {
+          console.error('[App] Gemini Nano initialization error:', err);
+        });
+    }
+  }, []);
 
   // Check authentication on mount
   useEffect(() => {

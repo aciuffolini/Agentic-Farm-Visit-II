@@ -49,18 +49,30 @@ public class GeminiNanoPlugin extends Plugin {
 
         try {
             // Get ML Kit GenAI client
+            android.util.Log.d("GeminiNano", "Attempting to get Generation client...");
             model = Generation.getClient();
+            android.util.Log.d("GeminiNano", "Got Generation client, checking status...");
+            
             FeatureStatus status = model.checkStatus();
+            android.util.Log.d("GeminiNano", "Status: " + status.toString());
             
             ret.put("available", status == FeatureStatus.AVAILABLE || status == FeatureStatus.DOWNLOADABLE);
             ret.put("status", status.toString());
             
             if (status == FeatureStatus.DOWNLOADABLE) {
                 ret.put("downloadable", true);
+                android.util.Log.d("GeminiNano", "Model is downloadable");
+            } else if (status == FeatureStatus.AVAILABLE) {
+                android.util.Log.d("GeminiNano", "Model is already available");
             }
-        } catch (Exception e) {
+        } catch (NoClassDefFoundError e) {
+            android.util.Log.e("GeminiNano", "Class not found error: " + e.getMessage());
             ret.put("available", false);
-            ret.put("reason", e.getMessage());
+            ret.put("reason", "ML Kit GenAI classes not found. Check dependency: " + e.getMessage());
+        } catch (Exception e) {
+            android.util.Log.e("GeminiNano", "Error checking availability: " + e.getMessage(), e);
+            ret.put("available", false);
+            ret.put("reason", e.getClass().getSimpleName() + ": " + e.getMessage());
         }
         
         call.resolve(ret);
@@ -77,13 +89,17 @@ public class GeminiNanoPlugin extends Plugin {
         }
 
         try {
+            android.util.Log.d("GeminiNano", "Initializing model...");
             model = Generation.getClient();
             FeatureStatus status = model.checkStatus();
+            android.util.Log.d("GeminiNano", "Initialize status: " + status.toString());
             
             if (status == FeatureStatus.DOWNLOADABLE) {
+                android.util.Log.d("GeminiNano", "Starting model download...");
                 // Download model in background
                 model.download()
                     .addOnSuccessListener(aVoid -> {
+                        android.util.Log.d("GeminiNano", "Model download successful");
                         modelInitialized = true;
                         JSObject ret = new JSObject();
                         ret.put("initialized", true);
@@ -91,19 +107,26 @@ public class GeminiNanoPlugin extends Plugin {
                         call.resolve(ret);
                     })
                     .addOnFailureListener(e -> {
+                        android.util.Log.e("GeminiNano", "Model download failed: " + e.getMessage(), e);
                         call.reject("Failed to download model: " + e.getMessage());
                     });
             } else if (status == FeatureStatus.AVAILABLE) {
+                android.util.Log.d("GeminiNano", "Model already available, marking as initialized");
                 modelInitialized = true;
                 JSObject ret = new JSObject();
                 ret.put("initialized", true);
                 ret.put("message", "Model already available");
                 call.resolve(ret);
             } else {
+                android.util.Log.w("GeminiNano", "Model not available. Status: " + status);
                 call.reject("Model not available. Status: " + status);
             }
+        } catch (NoClassDefFoundError e) {
+            android.util.Log.e("GeminiNano", "Class not found during initialization: " + e.getMessage());
+            call.reject("ML Kit GenAI not found. Check build.gradle dependency: " + e.getMessage());
         } catch (Exception e) {
-            call.reject("Failed to initialize: " + e.getMessage());
+            android.util.Log.e("GeminiNano", "Exception during initialization: " + e.getMessage(), e);
+            call.reject("Failed to initialize: " + e.getClass().getSimpleName() + ": " + e.getMessage());
         }
     }
 
