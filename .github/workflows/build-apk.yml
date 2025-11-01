@@ -28,6 +28,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      
       - name: Cache node modules
         uses: actions/cache@v4
         with:
@@ -40,7 +43,9 @@ jobs:
             ${{ runner.os }}-node-
       
       - name: Install root dependencies
-        run: npm install
+        run: |
+          npm install
+          echo "✅ Root dependencies installed"
       
       - name: Build shared package
         run: |
@@ -48,7 +53,11 @@ jobs:
           npm install
           npm run build
           echo "✅ Shared package built"
-          ls -la dist/ || echo "⚠️ dist directory check"
+          if [ ! -d "dist" ]; then
+            echo "❌ dist directory not found!"
+            exit 1
+          fi
+          ls -la dist/
       
       - name: Build PWA (web app)
         run: |
@@ -56,33 +65,51 @@ jobs:
           npm install
           npm run build
           echo "✅ PWA built"
-          ls -la dist/ || echo "⚠️ dist directory check"
           if [ ! -f "dist/index.html" ]; then
             echo "❌ dist/index.html not found!"
+            ls -la dist/ || echo "dist directory contents:"
             exit 1
           fi
+          echo "📦 PWA build contents:"
+          ls -la dist/
       
       - name: Install Capacitor CLI
-        run: npm install -g @capacitor/cli@^6.0.2
+        run: |
+          npm install -g @capacitor/cli@^6.0.2
+          npx cap --version
       
       - name: Sync Capacitor Android (copy PWA to Android assets)
         run: |
           cd apps/web
-          npx cap sync android
+          npx cap sync android --no-deps
           echo "✅ Capacitor sync completed"
           # Verify PWA files are in Android assets
           if [ -f "android/app/src/main/assets/public/index.html" ]; then
             echo "✅ PWA files copied to Android assets"
+            ls -la android/app/src/main/assets/public/ | head -10
           else
-            echo "⚠️ PWA files not found in Android assets"
-            ls -la android/app/src/main/assets/ || echo "Assets dir check"
+            echo "⚠️ Checking Android assets structure..."
+            find android/app/src/main/assets -type f | head -10 || echo "No assets found"
+            # Don't fail here, Gradle will fail if needed
           fi
+      
+      - name: Accept Android licenses
+        run: |
+          yes | sdkmanager --licenses || true
+      
+      - name: Install required Android components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" || echo "SDK components may already be installed"
       
       - name: Build Android APK
         run: |
           cd apps/web/android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace --warning-mode all || {
+            echo "❌ Gradle build failed!"
+            ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tail -50
+            exit 1
+          }
           echo "✅ APK build completed"
       
       - name: Verify APK exists
@@ -92,10 +119,17 @@ jobs:
             echo "✅ APK built successfully!"
             ls -lh "$APK_PATH"
             file "$APK_PATH" || echo "File type check"
+            # Check APK size (should be > 1MB)
+            SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH" 2>/dev/null || echo "0")
+            if [ "$SIZE" -lt 1000000 ]; then
+              echo "⚠️ APK seems too small ($SIZE bytes)"
+            fi
           else
             echo "❌ APK not found at: $APK_PATH"
             echo "Searching for APK files..."
             find apps/web/android -name "*.apk" -type f || echo "No APK files found"
+            echo "Checking build outputs..."
+            ls -la apps/web/android/app/build/outputs/ || echo "No outputs directory"
             exit 1
           fi
       
@@ -128,7 +162,7 @@ jobs:
             1. Descargar APK desde abajo
             2. Habilitar "Fuentes desconocidas" en Settings → Security
             3. Instalar APK
-            4. Contraseña: `Fotheringham933@`
+            4. Confirmar identidad cuando se solicite
             
             ## ✨ Características
             

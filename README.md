@@ -33,7 +33,7 @@
    - Go to: `Settings → Security → Install unknown apps`
    - Enable for your browser (Chrome/Edge)
 3. **Install APK** from your Downloads folder
-4. **Launch app** and enter password: `Fotheringham933@`
+4. **Launch app** and confirm identity when prompted
 
 > **Note**: The APK will be available after the first release is created. If you don't see the download button, check [How to Build APK](#-building-from-source).
 
@@ -66,7 +66,7 @@
 - 🗺️ **Interactive Maps**: GPS visualization with farm boundaries
 - 📊 **Data Export**: CSV export for analysis
 - 🔄 **Auto-Sync**: Background sync when online
-- 🔐 **Secure**: Local password protection
+- 🔐 **Secure**: Local identity verification
 - 🌐 **Future-Ready**: Architecture designed for Ray-Ban Meta Gen 2
 
 </td>
@@ -249,11 +249,11 @@ See [`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml)
 
 This repository is **public** for device testing, but **API endpoints are protected**.
 
-### App Password
+### App Authentication
 
-**Default password**: `Fotheringham933@`
+**Identity Verification**: The app requires identity confirmation for access.
 
-This password is required to access the app. Change it in production by modifying `apps/web/src/components/PasswordPrompt.tsx`.
+The app will prompt "¿Eres Atilio Ciuffolini?" on launch. Only confirmed identity grants access.
 
 ### API Keys
 
