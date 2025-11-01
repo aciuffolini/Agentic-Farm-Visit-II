@@ -255,9 +255,12 @@ This repository is **public** for device testing, but **API endpoints are protec
 
 The app will prompt "¿Eres Atilio Ciuffolini?" on launch. Only confirmed identity grants access.
 
-### API Keys
+### Permissions & Access
 
-For server features, API keys are required. Contact the repository owner for access.
+For API keys, server features, or access requests, please contact:
+
+**Atilio Ciuffolini**  
+📧 **Email**: [aciuffolini@teknal.com.ar](mailto:aciuffolini@teknal.com.ar)
 
 **Note**: The app works **offline-first** with Gemini Nano. API keys are only needed for server sync features.
 
@@ -325,5 +328,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Made with ❤️ for farmers**
 
 [⭐ Star this repo](https://github.com/aciuffolini/Agentic-Farm-Visit) • [📱 Download APK](#-download-for-android) • [🐛 Report Bug](https://github.com/aciuffolini/Agentic-Farm-Visit/issues)
+
+**Contact**: [aciuffolini@teknal.com.ar](mailto:aciuffolini@teknal.com.ar) for permissions and access
 
 </div>
