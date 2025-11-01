@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.5-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.7-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Android-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -20,7 +20,7 @@
 
 ### 🎯 **One-Click Download**
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.5-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.7-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
 **Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 
@@ -327,6 +327,44 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with [Capacitor](https://capacitorjs.com/) for native Android integration
 - AI powered by [Gemini Nano](https://ai.google.dev/) for on-device processing
 - Maps powered by [OpenStreetMap](https://www.openstreetmap.org/)
+
+---
+
+## 🌐 Web Deployment (GitHub Pages)
+
+The app is automatically deployed to GitHub Pages on every push to `main` branch.
+
+**🌐 Live Web App**: [View on GitHub Pages](https://aciuffolini.github.io/Agentic-Farm-Visit/)
+
+### Accessing the Web Version
+
+1. **Visit**: [https://aciuffolini.github.io/Agentic-Farm-Visit/](https://aciuffolini.github.io/Agentic-Farm-Visit/)
+2. **Features Available**:
+   - ✅ Full UI/UX testing
+   - ✅ Mock Gemini Nano responses (development mode)
+   - ✅ Chat functionality (with mock AI)
+   - ✅ Map visualization
+   - ⚠️ Some features require Android device (camera, GPS, microphone)
+3. **Note**: The web version uses mock mode for Gemini Nano. For real AI responses, use the Android APK.
+
+### Automatic Deployment
+
+The deployment is handled by GitHub Actions:
+- **Workflow**: [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)
+- **Auto-deploys** on every push to `main` branch
+- **Manual trigger** available in Actions tab
+
+### Local Testing Before Deploy
+
+Test locally before pushing:
+
+```bash
+cd apps/web
+npm run dev
+# Open http://localhost:5173
+```
+
+See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 
 ---
 
