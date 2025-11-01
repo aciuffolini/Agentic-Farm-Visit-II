@@ -10,6 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: write  # Needed for creating releases
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,17 +21,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            apps/web/package-lock.json
-            packages/shared/package-lock.json
       
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+      
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/web/node_modules
+            packages/shared/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       
       - name: Install root dependencies
         run: npm install
@@ -38,23 +47,57 @@ jobs:
           cd packages/shared
           npm install
           npm run build
+          echo "✅ Shared package built"
+          ls -la dist/ || echo "⚠️ dist directory check"
       
-      - name: Build web app
+      - name: Build PWA (web app)
         run: |
           cd apps/web
           npm install
           npm run build
+          echo "✅ PWA built"
+          ls -la dist/ || echo "⚠️ dist directory check"
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ dist/index.html not found!"
+            exit 1
+          fi
       
-      - name: Sync Capacitor Android
+      - name: Install Capacitor CLI
+        run: npm install -g @capacitor/cli@^6.0.2
+      
+      - name: Sync Capacitor Android (copy PWA to Android assets)
         run: |
           cd apps/web
           npx cap sync android
+          echo "✅ Capacitor sync completed"
+          # Verify PWA files are in Android assets
+          if [ -f "android/app/src/main/assets/public/index.html" ]; then
+            echo "✅ PWA files copied to Android assets"
+          else
+            echo "⚠️ PWA files not found in Android assets"
+            ls -la android/app/src/main/assets/ || echo "Assets dir check"
+          fi
       
-      - name: Build APK with Gradle
+      - name: Build Android APK
         run: |
           cd apps/web/android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          echo "✅ APK build completed"
+      
+      - name: Verify APK exists
+        run: |
+          APK_PATH="apps/web/android/app/build/outputs/apk/debug/app-debug.apk"
+          if [ -f "$APK_PATH" ]; then
+            echo "✅ APK built successfully!"
+            ls -lh "$APK_PATH"
+            file "$APK_PATH" || echo "File type check"
+          else
+            echo "❌ APK not found at: $APK_PATH"
+            echo "Searching for APK files..."
+            find apps/web/android -name "*.apk" -type f || echo "No APK files found"
+            exit 1
+          fi
       
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -69,6 +112,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
       
       - name: Create Release (if tag)
         if: startsWith(github.ref, 'refs/tags/')
@@ -97,4 +141,3 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
