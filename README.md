@@ -90,12 +90,20 @@ npx cap open android
 
 ### Opción 2: Instalar APK Pre-compilado
 
-1. **Descargar APK** desde el repositorio
-2. **Habilitar "Fuentes desconocidas"** en Settings → Security
-3. **Instalar APK** desde descargas
+**⚠️ Nota:** El APK necesita ser compilado primero. Ver instrucciones abajo.
+
+**Una vez que tengas el APK:**
+
+1. **Sube el APK a GitHub Releases** (ver [DEPLOY_ANDROID.md](./DEPLOY_ANDROID.md))
+2. **O comparte el APK directamente** por email/Drive
+3. **En Android**: 
+   - Descargar el APK
+   - Habilitar "Fuentes desconocidas": Settings → Security
+   - Instalar desde descargas
 4. **Contraseña de acceso:** `Fotheringham933@`
 
-📚 **Ver guía completa:** [INSTALL_ANDROID.md](./INSTALL_ANDROID.md)
+📚 **Ver guía completa:** [INSTALL_ANDROID.md](./INSTALL_ANDROID.md)  
+🚀 **Guía para compilar y subir APK:** [DEPLOY_ANDROID.md](./DEPLOY_ANDROID.md)
 
 ## 🔧 Architecture
 
