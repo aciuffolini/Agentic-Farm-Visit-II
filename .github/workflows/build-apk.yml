@@ -44,13 +44,13 @@ jobs:
       
       - name: Install root dependencies
         run: |
-          npm install
+          npm install --legacy-peer-deps || npm install
           echo "✅ Root dependencies installed"
       
       - name: Build shared package
         run: |
           cd packages/shared
-          npm install
+          npm install --legacy-peer-deps || npm install
           npm run build
           echo "✅ Shared package built"
           if [ ! -d "dist" ]; then
@@ -62,7 +62,7 @@ jobs:
       - name: Build PWA (web app)
         run: |
           cd apps/web
-          npm install
+          npm install --legacy-peer-deps || npm install
           npm run build
           echo "✅ PWA built"
           if [ ! -f "dist/index.html" ]; then
@@ -81,35 +81,46 @@ jobs:
       - name: Sync Capacitor Android (copy PWA to Android assets)
         run: |
           cd apps/web
-          npx cap sync android --no-deps
+          npx cap sync android
           echo "✅ Capacitor sync completed"
+          # Verify Android project exists
+          if [ ! -d "android" ]; then
+            echo "❌ Android directory not found after sync!"
+            exit 1
+          fi
           # Verify PWA files are in Android assets
           if [ -f "android/app/src/main/assets/public/index.html" ]; then
             echo "✅ PWA files copied to Android assets"
             ls -la android/app/src/main/assets/public/ | head -10
           else
             echo "⚠️ Checking Android assets structure..."
-            find android/app/src/main/assets -type f | head -10 || echo "No assets found"
-            # Don't fail here, Gradle will fail if needed
+            find android/app/src/main/assets -type f 2>/dev/null | head -10 || echo "No assets found"
           fi
+      
+      - name: Setup Android environment
+        run: |
+          export ANDROID_HOME=$ANDROID_SDK_ROOT
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "✅ Android environment configured"
       
       - name: Accept Android licenses
         run: |
-          yes | sdkmanager --licenses || true
+          yes | sdkmanager --licenses || echo "⚠️ License acceptance may have failed, continuing..."
+        continue-on-error: true
       
       - name: Install required Android components
         run: |
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" || echo "SDK components may already be installed"
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" || echo "⚠️ Some SDK components may already be installed"
+        continue-on-error: true
       
       - name: Build Android APK
         run: |
           cd apps/web/android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace --warning-mode all || {
-            echo "❌ Gradle build failed!"
-            ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tail -50
-            exit 1
-          }
+          chmod +x gradlew.bat || true
+          ./gradlew assembleDebug --no-daemon --stacktrace
           echo "✅ APK build completed"
       
       - name: Verify APK exists
@@ -120,16 +131,18 @@ jobs:
             ls -lh "$APK_PATH"
             file "$APK_PATH" || echo "File type check"
             # Check APK size (should be > 1MB)
-            SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH" 2>/dev/null || echo "0")
+            SIZE=$(stat -c%s "$APK_PATH" 2>/dev/null || echo "0")
             if [ "$SIZE" -lt 1000000 ]; then
               echo "⚠️ APK seems too small ($SIZE bytes)"
+            else
+              echo "✅ APK size OK: $SIZE bytes"
             fi
           else
             echo "❌ APK not found at: $APK_PATH"
             echo "Searching for APK files..."
             find apps/web/android -name "*.apk" -type f || echo "No APK files found"
             echo "Checking build outputs..."
-            ls -la apps/web/android/app/build/outputs/ || echo "No outputs directory"
+            ls -la apps/web/android/app/build/outputs/ 2>/dev/null || echo "No outputs directory"
             exit 1
           fi
       
@@ -166,11 +179,16 @@ jobs:
             
             ## ✨ Características
             
-            - GPS, Cámara, Micrófono
+            - GPS, Cámara, Micrófono (con permisos completos)
             - Extracción de datos con IA (Gemini Nano)
             - Mapa KMZ/KML
             - Offline-first PWA
             - Multi-agente system (swarm)
+            - Chatbot mejorado con respuestas contextuales
+            
+            ## 📧 Contacto
+            
+            Para permisos y acceso: **aciuffolini@teknal.com.ar**
           draft: false
           prerelease: false
         env:
