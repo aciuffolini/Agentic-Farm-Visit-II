@@ -1,111 +1,133 @@
-# Farm Field Visit App - Android-First Offline PWA
+# 🌾 Farm Field Visit App
 
-🌾 **Offline-First Field Visit Capture App** — Android Native Sensors + AI Assistance
+<div align="center">
 
-## 🎯 Features
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Android-green.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
+**Offline-First Field Visit Capture App** — Android Native Sensors + AI Assistance
+
+[📱 Download APK](#-download-for-android) • [🚀 Quick Start](#-quick-start) • [📖 Documentation](#-documentation)
+
+</div>
+
+---
+
+## 📥 Download for Android
+
+<div align="center">
+
+### 🎯 **One-Click Download**
+
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.0-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+
+**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
+
+</div>
+
+### 📋 Installation Steps
+
+1. **Download APK** using the button above or visit [Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
+2. **Enable Unknown Sources**:
+   - Go to: `Settings → Security → Install unknown apps`
+   - Enable for your browser (Chrome/Edge)
+3. **Install APK** from your Downloads folder
+4. **Launch app** and enter password: `Fotheringham933@`
+
+> **Note**: The APK will be available after the first release is created. If you don't see the download button, check [How to Build APK](#-building-from-source).
+
+---
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 🎯 Core Features
 
 - ✅ **Android Native Sensors**: Camera, Microphone, GPS, Speaker
 - ✅ **Offline-First**: Works without internet connectivity
 - ✅ **GPS Capture**: High-accuracy location tracking
-- ✅ **Voice Notes**: Native audio recording
+- ✅ **Voice Notes**: Native audio recording with transcription
 - ✅ **Photo Capture**: Native camera access
-- ✅ **AI Assistance**: LLM extracts structured fields from voice notes
+- ✅ **AI Assistance**: Gemini Nano extracts structured fields from voice notes
 - ✅ **Real-Time Chat**: Context-aware AI assistant
 - ✅ **Offline Sync**: Outbox pattern for network failures
-- ✅ **Future-Ready**: Architecture designed for Ray-Ban Meta Gen 2
+- ✅ **Farm Mapping**: KMZ/KML support from Google Earth
+
+</td>
+<td width="50%">
+
+### 🚀 Advanced Features
+
+- 🤖 **Multi-Agent System**: Swarm architecture for task routing
+- 🗺️ **Interactive Maps**: GPS visualization with farm boundaries
+- 📊 **Data Export**: CSV export for analysis
+- 🔄 **Auto-Sync**: Background sync when online
+- 🔐 **Secure**: Local password protection
+- 🌐 **Future-Ready**: Architecture designed for Ray-Ban Meta Gen 2
+
+</td>
+</tr>
+</table>
+
+---
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### For Users (Install Pre-built APK)
+
+👉 **See [Download for Android](#-download-for-android) above**
+
+### For Developers
+
+<details>
+<summary><b>📋 Prerequisites</b></summary>
 
 - **Node.js** 18+
 - **Android Studio** (for Android builds)
 - **Java JDK 17** (for Android development)
 
-### Setup
+</details>
 
 ```bash
+# Clone repository
+git clone https://github.com/aciuffolini/Agentic-Farm-Visit.git
+cd Agentic-Farm-Visit
+
 # Install dependencies
 npm install
 
 # Build shared package
 cd packages/shared
 npm run build
+cd ../..
 
-# Set up server database
-cd ../../apps/server
-cp env.template .env
-npx prisma generate
-npx prisma migrate dev --name init
-
-# Install Capacitor Android platform
-cd ../web
-npm install @capacitor/camera @capacitor/geolocation @capacitor/filesystem
-npx cap add android
-```
-
-### Development
-
-```bash
-# Terminal 1: Web app (with hot reload)
+# Development server
 cd apps/web
 npm run dev
-
-# Terminal 2: Backend server
-cd apps/server
-npm run dev
-
-# Terminal 3: Build and run on Android
-cd apps/web
-npm run build
-npx cap sync android
-npx cap run android
+# Open http://localhost:5173
 ```
 
-## 📱 Instalación en Android
+**Full setup guide**: [INSTALL_ANDROID.md](./INSTALL_ANDROID.md)
 
-### Opción 1: Instalar desde Código Fuente
+---
 
-Ver instrucciones completas en [INSTALL_ANDROID.md](./INSTALL_ANDROID.md)
+## 📸 Screenshots
 
-**Resumen rápido:**
-```bash
-# Clonar repositorio
-git clone https://github.com/TU_USUARIO/farm-visit-app.git
-cd farm-visit-app
+<div align="center">
 
-# Instalar dependencias
-npm install
-cd packages/shared && npm run build && cd ../..
+| Capture Interface | Map View | Chat Assistant |
+|-------------------|----------|----------------|
+| Coming Soon | Coming Soon | Coming Soon |
 
-# Compilar para Android
-cd apps/web
-npm run build
-npx cap sync android
-npx cap open android
+</div>
 
-# En Android Studio: Build → Build APK(s)
-# Instalar APK en dispositivo
-```
+---
 
-### Opción 2: Instalar APK Pre-compilado
-
-**⚠️ Nota:** El APK necesita ser compilado primero. Ver instrucciones abajo.
-
-**Una vez que tengas el APK:**
-
-1. **Sube el APK a GitHub Releases** (ver [DEPLOY_ANDROID.md](./DEPLOY_ANDROID.md))
-2. **O comparte el APK directamente** por email/Drive
-3. **En Android**: 
-   - Descargar el APK
-   - Habilitar "Fuentes desconocidas": Settings → Security
-   - Instalar desde descargas
-4. **Contraseña de acceso:** `Fotheringham933@`
-
-📚 **Ver guía completa:** [INSTALL_ANDROID.md](./INSTALL_ANDROID.md)  
-🚀 **Guía para compilar y subir APK:** [DEPLOY_ANDROID.md](./DEPLOY_ANDROID.md)
-
-## 🔧 Architecture
+## 🏗️ Architecture
 
 ### Sensor Abstraction Layer
 
@@ -123,55 +145,130 @@ The app uses a **sensor abstraction layer** that works with:
 │   │   ├── src/
 │   │   │   ├── lib/sensors/    # Sensor abstraction
 │   │   │   ├── hooks/          # React hooks (useGPS, useCamera, etc.)
-│   │   │   └── components/    # UI components
+│   │   │   ├── components/    # UI components
+│   │   │   └── lib/agents/    # Multi-agent system
 │   │   └── android/            # Capacitor Android project
 │   └── server/            # Backend API
 └── packages/
     └── shared/            # Shared types & schemas
 ```
 
+---
+
+## 🔧 Building from Source
+
+### Build Android APK
+
+<details>
+<summary><b>📦 Step-by-Step</b></summary>
+
+```bash
+# 1. Install dependencies
+npm install
+cd packages/shared && npm run build && cd ../../apps/web
+
+# 2. Build web app
+npm run build
+
+# 3. Sync Capacitor Android
+npx cap sync android
+
+# 4. Build APK (choose one):
+# Option A: Using Gradle (requires Java JDK 17)
+cd android
+.\gradlew.bat assembleDebug
+
+# Option B: Using Android Studio
+npx cap open android
+# Then: Build → Build Bundle(s) / APK(s) → Build APK(s)
+```
+
+**Full guide**: [DEPLOY_ANDROID.md](./DEPLOY_ANDROID.md) | [QUICK_BUILD_GUIDE.md](./QUICK_BUILD_GUIDE.md)
+
+</details>
+
+### Automated Build (GitHub Actions)
+
+The repository includes a GitHub Actions workflow that automatically builds the APK:
+
+- **Manual trigger**: Go to Actions → "Build Android APK" → Run workflow
+- **Auto on tag**: Creates release automatically when you push a tag like `v1.0.0`
+
+See [`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml)
+
+---
+
 ## 📚 Documentation
 
-- [Android Architecture](./ANDROID_ARCHITECTURE.md) - Detailed Android integration
-- [System Architecture](./FARM_VISIT_ARCHITECTURE.md) - Full system design
-- [LLM Backend](./FARM_VISIT_ARCHITECTURE.md#-llm-backend-architecture) - AI inference strategies
+| Document | Description |
+|----------|-------------|
+| [INSTALL_ANDROID.md](./INSTALL_ANDROID.md) | Complete Android installation guide |
+| [DEPLOY_ANDROID.md](./DEPLOY_ANDROID.md) | Build and deploy APK guide |
+| [QUICK_BUILD_GUIDE.md](./QUICK_BUILD_GUIDE.md) | Quick build instructions |
+| [ANDROID_ARCHITECTURE.md](./ANDROID_ARCHITECTURE.md) | Android integration details |
+| [FARM_VISIT_ARCHITECTURE.md](./FARM_VISIT_ARCHITECTURE.md) | System architecture |
+| [SECURITY_STRATEGY.md](./SECURITY_STRATEGY.md) | Security approach |
 
-## 🔌 Android Permissions
-
-The app requires these Android permissions:
-- **Camera**: For field photo capture
-- **Microphone**: For voice note recording
-- **Fine Location**: For GPS tracking
-- **Internet**: For data synchronization
-
-See `ANDROID_ARCHITECTURE.md` for full permission details.
+---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 19 + TypeScript + Vite + Tailwind
-- **Mobile**: Capacitor (Android native wrapper)
-- **Backend**: Node.js + Fastify + Prisma + SQLite
-- **AI**: LLM Router (API + Local inference support)
-- **Sensors**: Capacitor plugins (Camera, Geolocation)
+<table>
+<tr>
+<td>
 
-## 📦 Key Dependencies
+**Frontend**
+- React 19 + TypeScript
+- Vite (build tool)
+- Tailwind CSS
+- Capacitor (Android)
 
-```json
-{
-  "@capacitor/android": "^7.4.3",
-  "@capacitor/camera": "^7.1.0",
-  "@capacitor/geolocation": "^7.0.0",
-  "@capacitor/filesystem": "^7.1.0"
-}
-```
+</td>
+<td>
 
-## 🔄 Development Workflow
+**Backend**
+- Node.js + Fastify
+- Prisma + SQLite
+- LLM Router (API + Local)
 
-1. **Web Development**: Use `npm run dev` for browser testing
-2. **Android Testing**: Build → Sync → Run on device
-3. **Sensor Testing**: Test on real Android device (emulator may have limitations)
+</td>
+<td>
+
+**Sensors**
+- Capacitor Camera
+- Capacitor Geolocation
+- Capacitor Filesystem
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🔐 Security & Authentication
+
+This repository is **public** for device testing, but **API endpoints are protected**.
+
+### App Password
+
+**Default password**: `Fotheringham933@`
+
+This password is required to access the app. Change it in production by modifying `apps/web/src/components/PasswordPrompt.tsx`.
+
+### API Keys
+
+For server features, API keys are required. Contact the repository owner for access.
+
+**Note**: The app works **offline-first** with Gemini Nano. API keys are only needed for server sync features.
+
+📚 See [SECURITY_STRATEGY.md](./SECURITY_STRATEGY.md) for full security details.
+
+---
 
 ## 🐛 Troubleshooting
+
+<details>
+<summary><b>Common Issues</b></summary>
 
 **Camera not working:**
 - Ensure Android permissions are granted
@@ -188,57 +285,45 @@ See `ANDROID_ARCHITECTURE.md` for full permission details.
 - Check device has working microphone
 - Test audio recording separately
 
-## 🚀 Production Build
+**APK download not working:**
+- Make sure a release has been created with the APK
+- Check [Releases page](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
+- Try downloading manually from Releases
 
-```bash
-# Build web app
-cd apps/web
-npm run build
-
-# Sync to Android
-npx cap sync android
-
-# Build Android APK
-npx cap build android
-```
-
-## 🔐 Security & Authentication
-
-This repository is **public** for device testing, but **API endpoints are protected**.
-
-### Setup for Device Testing:
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/farm-visit-app.git
-   ```
-
-2. **Create `.env` file:**
-   ```bash
-   cp .env.example .env
-   # Add your API key (contact repository owner)
-   ```
-
-3. **Request API Key:**
-   - Contact the repository owner for API key
-   - Add to `.env`: `VITE_API_KEY=your-api-key-here`
-
-4. **Build and test:**
-   ```bash
-   npm install
-   npm run build
-   npm run android:build
-   ```
-
-**Note**: The app works **offline-first** with Gemini Nano. API keys are only needed for server sync features.
-
-📚 See [SECURITY_STRATEGY.md](./SECURITY_STRATEGY.md) for full security details.
-
-## 📄 License
-
-MIT
+</details>
 
 ---
 
-**Ready to build?** Start with `npm install` and follow the setup instructions! 🚀
+## 🤝 Contributing
 
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Built with [Capacitor](https://capacitorjs.com/) for native Android integration
+- AI powered by [Gemini Nano](https://ai.google.dev/) for on-device processing
+- Maps powered by [OpenStreetMap](https://www.openstreetmap.org/)
+
+---
+
+<div align="center">
+
+**Made with ❤️ for farmers**
+
+[⭐ Star this repo](https://github.com/aciuffolini/Agentic-Farm-Visit) • [📱 Download APK](#-download-for-android) • [🐛 Report Bug](https://github.com/aciuffolini/Agentic-Farm-Visit/issues)
+
+</div>

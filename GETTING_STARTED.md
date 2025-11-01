@@ -1,167 +1,150 @@
-# Getting Started - Farm Visit MVP
+# 🚀 Getting Started - Farm Field Visit App
 
-## ✅ What's Complete
+## 📱 For End Users (Download & Install)
 
-Your MVP is **~95% complete**! Here's what's ready:
+### Quick Install from GitHub
 
-### ✅ Frontend (Client)
-- ✅ React app structure with TypeScript
-- ✅ Sensor abstraction layer (Android + Web)
-- ✅ React hooks (useGPS, useCamera, useMicrophone)
-- ✅ Main components:
-  - FieldVisit (capture UI)
-  - ConfirmFieldsModal (field editing)
-  - ChatDrawer (AI chat)
-- ✅ Local database (IndexedDB via Dexie)
-- ✅ API client (HTTP + SSE)
-- ✅ Outbox pattern (offline sync)
-- ✅ Tailwind CSS configured
-- ✅ Vite build system
+1. **Download APK**:
+   - Visit: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
+   - Click "Download APK" button or download `app-debug.apk`
+   
+2. **Install on Android**:
+   - Enable "Unknown Sources": `Settings → Security → Install unknown apps`
+   - Open the downloaded APK file
+   - Tap "Install"
+   
+3. **Launch & Login**:
+   - Open the app
+   - Enter password: `Fotheringham933@`
+   - Start capturing field visits!
 
-### ✅ Shared Package
-- ✅ Type definitions (Visit, ChatMessage)
-- ✅ Zod schemas for validation
-- ✅ TypeScript configured
+### First Use Guide
 
-### ⏳ Still Needed
-- ⏳ Server backend (API routes)
-- ⏳ PWA icons (placeholder is fine for now)
+1. **Get GPS Location**: Tap "Get GPS" button
+2. **Record Voice Note**: Tap "Record Voice" and speak your observations
+3. **Take Photo**: Tap "Take Photo" to capture field images
+4. **Save Visit**: Tap "Save Visit" to store the data
+5. **View Records**: Check "Recent Records" section
 
 ---
 
-## 🚀 Quick Start
+## 👨‍💻 For Developers
 
-### 1. Install Dependencies
+### Prerequisites
+
+- **Node.js** 18+ installed
+- **Git** installed
+- **(Optional) Java JDK 17** - only needed for local APK building
+
+### Setup Project
 
 ```bash
-cd 7_farm_visit
+# 1. Clone repository
+git clone https://github.com/aciuffolini/Agentic-Farm-Visit.git
+cd Agentic-Farm-Visit
 
-# Install all workspace dependencies
+# 2. Install dependencies
 npm install
 
-# Build shared package first
+# 3. Build shared package
 cd packages/shared
 npm run build
-
-# Go back to root
 cd ../..
-```
 
-### 2. Start Development Server
-
-```bash
+# 4. Start development server
 cd apps/web
 npm run dev
 ```
 
-Open http://localhost:5173 in your browser.
+**Open**: http://localhost:5173
 
-### 3. Test the MVP
-
-**Without Server (Offline Mode):**
-1. Click "Get GPS" - Should get your location
-2. Click "Take Photo" - Should open camera/file picker
-3. Click "Record Voice" - Should start recording
-4. Type a note in the textarea
-5. Click "Save Visit" - Opens modal
-6. Fill in fields and save
-7. Visit appears in "Recent Records" table
-
-**Note**: Chat won't work without server, but everything else does!
-
----
-
-## 🔧 Next Steps
-
-### Option 1: Test Client First (No Server)
-
-The app works **completely offline** for capture and local storage:
-- ✅ GPS capture
-- ✅ Photo capture  
-- ✅ Voice recording
-- ✅ Save to local DB
-- ✅ View recent records
-
-**To do**: Just test the UI and make sure sensors work!
-
-### Option 2: Add Server (Full MVP)
-
-1. **Create server structure** (see `apps/server/` in architecture docs)
-2. **Add Prisma + SQLite**
-3. **Implement API routes**:
-   - `POST /api/visits` - Save visit
-   - `GET /api/visits` - List visits
-   - `POST /api/chat` - Chat streaming
-
-4. **Start server**:
-   ```bash
-   cd apps/server
-   npm install
-   npm run dev  # Runs on port 3000
-   ```
-
-5. **Test full flow**:
-   - Save visit → Syncs to server
-   - Go offline → Saves locally, queues for sync
-   - Go online → Auto-syncs queued items
-   - Chat → Streams AI responses
-
----
-
-## 📱 Android Setup (Optional for Now)
-
-To test on Android:
+### Build for Production
 
 ```bash
 cd apps/web
 
-# Install Capacitor plugins
-npm install @capacitor/camera @capacitor/geolocation @capacitor/filesystem
+# Build web app
+npm run build
 
-# Add Android platform
-npx cap add android
+# Sync Capacitor Android
+npx cap sync android
+```
 
-# Build and sync
+### Build APK (Choose One Method)
+
+#### Method 1: GitHub Actions (Recommended - No Java Needed)
+
+1. **Push code to GitHub**
+2. **Create a tag**:
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+3. **GitHub Actions will automatically**:
+   - Build the APK
+   - Create a Release
+   - Upload the APK
+
+**Or manually trigger**:
+- Go to: Actions → "Build Android APK" → Run workflow
+
+#### Method 2: Local Build (Requires Java JDK 17)
+
+```bash
+# Install Java JDK 17 first (see BUILD_APK_SOLUTION.md)
+
+# Build APK
+cd apps/web/android
+.\gradlew.bat assembleDebug
+
+# APK location:
+# apps/web/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+**Full guide**: [BUILD_APK_SOLUTION.md](./BUILD_APK_SOLUTION.md)
+
+---
+
+## 🔧 Troubleshooting
+
+### App won't install on Android
+
+- **Enable Unknown Sources**: Settings → Security → Install unknown apps
+- **Check APK**: Make sure you downloaded the correct file
+- **Storage**: Ensure you have enough storage space
+
+### Development Issues
+
+**npm install fails**:
+```bash
+# Clean and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**Build fails**:
+```bash
+# Clean build
+cd apps/web
+rm -rf dist android/app/build
 npm run build
 npx cap sync android
-
-# Open in Android Studio
-npx cap open android
 ```
 
-Then run on device/emulator from Android Studio.
+**GPS not working**:
+- Test on real device (emulator GPS is simulated)
+- Grant location permissions
+- Enable high-accuracy mode in device settings
 
 ---
 
-## 🐛 Troubleshooting
+## 📚 Next Steps
 
-### "Cannot find module '@farm-visit/shared'"
-```bash
-# Build shared package first
-cd packages/shared
-npm run build
-```
-
-### Tailwind styles not working
-Make sure `tailwind.config.js` and `postcss.config.cjs` exist in `apps/web/`.
-
-### GPS/Camera/Mic not working
-- **Browser**: Check permissions in browser settings
-- **Android**: Grant permissions in Android settings
-- **Test on real device**: Emulators may have limitations
-
-### Chat shows "Error"
-Server not running. Start server or test offline features only.
+- **Read**: [README.md](./README.md) for full documentation
+- **Android Setup**: [INSTALL_ANDROID.md](./INSTALL_ANDROID.md)
+- **Build APK**: [DEPLOY_ANDROID.md](./DEPLOY_ANDROID.md)
+- **Architecture**: [FARM_VISIT_ARCHITECTURE.md](./FARM_VISIT_ARCHITECTURE.md)
 
 ---
 
-## 📋 Current Status
-
-**Client MVP**: ✅ Complete (95%)
-**Server MVP**: ⏳ Not started (can use offline mode for now)
-**Android**: ⏳ Ready to set up (follow Android guide)
-
----
-
-**You're ready to test the MVP!** Start with `npm install` and `npm run dev`. 🚀
-
+**Need Help?** Open an issue on GitHub!

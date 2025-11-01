@@ -70,7 +70,9 @@ export class WebProvider implements ISensorProvider {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
-      input.capture = options?.source === 'photos' ? undefined : 'environment';
+      if (options?.source !== 'photos') {
+        input.capture = 'environment';
+      }
 
       input.onchange = (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];

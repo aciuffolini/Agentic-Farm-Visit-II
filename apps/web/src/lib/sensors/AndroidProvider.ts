@@ -3,7 +3,7 @@
  * Uses Capacitor plugins for native Android sensor access
  */
 
-import { Camera, CameraResultType, CameraSource, CameraPermissionStatus } from '@capacitor/camera';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Geolocation, Position, PermissionStatus as GeoPermissionStatus } from '@capacitor/geolocation';
 import { ISensorProvider, GPSLocation, PhotoResult, CameraOptions, PermissionStatus } from './ISensorProvider';
 
@@ -68,19 +68,28 @@ export class AndroidProvider implements ISensorProvider {
       correctOrientation: true,
     });
 
-    // Load image to get dimensions
-    const img = new Image();
-    img.src = image.dataUrl || '';
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = reject;
-    });
+    // Get image dimensions from loaded image
+    let width = 0;
+    let height = 0;
+    const dataUrl = image.dataUrl;
+    if (dataUrl) {
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          width = img.width;
+          height = img.height;
+          resolve();
+        };
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+    }
 
     return {
       dataUrl: image.dataUrl || '',
-      path: image.path,
-      width: image.width || img.width,
-      height: image.height || img.height,
+      path: image.path || undefined,
+      width: width || 0,
+      height: height || 0,
     };
   }
 
@@ -155,17 +164,21 @@ export class AndroidProvider implements ISensorProvider {
 
   async requestPermissions(): Promise<PermissionStatus> {
     // Camera
-    let cameraPerm: CameraPermissionStatus = { camera: 'denied', photos: 'denied' };
+    let cameraStatus: 'granted' | 'denied' = 'denied';
     try {
-      cameraPerm = await Camera.requestPermissions();
+      const result = await Camera.requestPermissions();
+      // Capacitor 6.x returns an object with camera and photos properties
+      const permState = result as any;
+      cameraStatus = (permState.camera === 'granted') ? 'granted' : 'denied';
     } catch (e) {
       console.warn('Camera permission request failed:', e);
     }
     
     // Geolocation
-    let geoPerm: GeoPermissionStatus = { location: 'denied' };
+    let geoStatus: 'granted' | 'denied' = 'denied';
     try {
-      geoPerm = await Geolocation.requestPermissions();
+      const geoPerm = await Geolocation.requestPermissions();
+      geoStatus = (geoPerm.location === 'granted') ? 'granted' : 'denied';
     } catch (e) {
       console.warn('Geolocation permission request failed:', e);
     }
@@ -180,40 +193,44 @@ export class AndroidProvider implements ISensorProvider {
     }
 
     return {
-      camera: cameraPerm.camera === 'granted' ? 'granted' : 'denied',
+      camera: cameraStatus,
       microphone: micPerm,
-      geolocation: geoPerm.location === 'granted' ? 'granted' : 'denied',
+      geolocation: geoStatus,
     };
   }
 
   async checkPermissions(): Promise<PermissionStatus> {
-    let cameraPerm: CameraPermissionStatus = { camera: 'denied', photos: 'denied' };
-    let geoPerm: GeoPermissionStatus = { location: 'denied' };
-    
+    // Camera
+    let cameraStatus: 'granted' | 'denied' | 'prompt' = 'prompt';
     try {
-      cameraPerm = await Camera.checkPermissions();
+      const result = await Camera.checkPermissions();
+      const permState = result as any;
+      cameraStatus = (permState.camera === 'granted') ? 'granted' : 'denied';
     } catch (e) {
       console.warn('Camera permission check failed:', e);
     }
     
+    // Geolocation
+    let geoStatus: 'granted' | 'denied' | 'prompt' = 'prompt';
     try {
-      geoPerm = await Geolocation.checkPermissions();
+      const geoPerm = await Geolocation.checkPermissions();
+      geoStatus = (geoPerm.location === 'granted') ? 'granted' : 'denied';
     } catch (e) {
       console.warn('Geolocation permission check failed:', e);
     }
     
     // Check microphone - Android WebView doesn't expose static permission API
     let micPerm: 'granted' | 'denied' | 'prompt' = 'prompt';
-    if (navigator.mediaDevices?.getUserMedia) {
+    if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
       micPerm = 'prompt';
     } else {
       micPerm = 'denied';
     }
 
     return {
-      camera: cameraPerm.camera === 'granted' ? 'granted' : 'denied',
+      camera: cameraStatus,
       microphone: micPerm,
-      geolocation: geoPerm.location === 'granted' ? 'granted' : 'denied',
+      geolocation: geoStatus,
     };
   }
 }

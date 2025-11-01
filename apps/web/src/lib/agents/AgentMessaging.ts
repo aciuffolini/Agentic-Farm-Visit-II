@@ -108,6 +108,7 @@ export class AgentMessaging {
       to: toAgentId,
       type: "delegation",
       task,
+      correlationId: crypto.randomUUID(),
       payload,
       timestamp: Date.now(),
       metadata: context,
@@ -132,6 +133,7 @@ export class AgentMessaging {
       to: "*", // Broadcast
       type: "event",
       task: event,
+      correlationId: crypto.randomUUID(),
       payload,
       timestamp: Date.now(),
     };

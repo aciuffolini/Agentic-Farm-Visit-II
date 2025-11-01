@@ -27,6 +27,7 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
+    host: true, // Allow access from network (for mobile testing)
     proxy: {
       "/api": {
         target: "http://localhost:3000",

@@ -19,7 +19,7 @@ export function FieldVisit() {
   const { photo, loading: photoLoading, capturePhoto, clearPhoto } = useCamera();
   const { recording, audioUrl, loading: audioLoading, startRecording, stopRecording, clearAudio } = useMicrophone();
 
-  const [fields, setFields] = useState<Partial<Visit>>(null);
+  const [fields, setFields] = useState<Partial<Visit> | null>(null);
   const [askOpen, setAskOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [records, setRecords] = useState<VisitRecord[]>([]);
@@ -223,9 +223,9 @@ export function FieldVisit() {
           </div>
           <div className="h-64 relative bg-slate-100">
             {kmzData ? (
-              <FarmMap gps={gps} kmzData={kmzData} />
+              <FarmMap gps={gps || undefined} kmzData={kmzData} />
             ) : (
-              <PrototypeMap gps={gps} />
+              <PrototypeMap gps={gps || undefined} />
             )}
           </div>
         </div>

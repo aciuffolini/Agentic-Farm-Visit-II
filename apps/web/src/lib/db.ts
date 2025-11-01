@@ -71,7 +71,7 @@ export const visitDB = {
   },
 
   async getUnsynced(): Promise<VisitRecord[]> {
-    return db.visits.where('synced').equals(false).toArray();
+    return db.visits.where('synced').equals(0).toArray();
   },
 
   async clear(): Promise<void> {
