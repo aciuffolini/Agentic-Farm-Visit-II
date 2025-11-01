@@ -25,6 +25,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
 
     const userMsg: ChatMessage = { role: 'user', content: input.trim() };
     setMessages((m) => [...m, userMsg]);
+    const userInput = input.trim();
     setInput('');
     setBusy(true);
 
@@ -33,16 +34,24 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     setMessages((m) => [...m, assistantMsg]);
 
     try {
+      console.log('[ChatDrawer] Sending message:', userInput);
+      
       // Use Gemini Nano only (will be tuned in future)
       const visitContext = (window as any).__VISIT_CONTEXT__;
+      console.log('[ChatDrawer] Visit context:', visitContext);
       
       // Stream response from Gemini Nano
-      for await (const chunk of geminiNano.stream({
-        text: userMsg.content,
+      let hasResponse = false;
+      const generator = geminiNano.stream({
+        text: userInput,
         location: visitContext?.gps 
           ? { lat: visitContext.gps.lat, lon: visitContext.gps.lon }
           : undefined,
-      })) {
+      });
+
+      for await (const chunk of generator) {
+        hasResponse = true;
+        console.log('[ChatDrawer] Received chunk:', chunk);
         setMessages((m) => {
           const copy = [...m];
           const last = copy[copy.length - 1];
@@ -52,14 +61,44 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
           return copy;
         });
       }
+
+      // If no response was generated, show a fallback
+      if (!hasResponse) {
+        console.warn('[ChatDrawer] No response generated from Gemini Nano');
+        setMessages((m) => {
+          const copy = [...m];
+          const last = copy[copy.length - 1];
+          if (last && last.role === 'assistant') {
+            copy[copy.length - 1] = { 
+              ...last, 
+              content: "I'm here! How can I help you with your field visit? Try asking about crops, pests, or diseases.\n\n(Note: If this is the first use, Gemini Nano may need to download the model. This requires Android 14+ and a compatible device.)"
+            };
+          }
+          return copy;
+        });
+      }
     } catch (err: any) {
+      console.error('[ChatDrawer] Error:', err);
+      
+      // Provide helpful error messages
+      let errorMessage = 'Sorry, I encountered an error. ';
+      if (err.message?.includes('not available')) {
+        errorMessage += 'Gemini Nano requires Android 14+ with AICore support. Please check your device compatibility.';
+      } else if (err.message?.includes('not initialized')) {
+        errorMessage += 'The AI model is still initializing. Please try again in a moment.';
+      } else if (err.message?.includes('timeout')) {
+        errorMessage += 'The request timed out. Please check your connection and try again.';
+      } else {
+        errorMessage += err.message || 'Unknown error. Please try again.';
+      }
+      
       setMessages((m) => {
         const copy = [...m];
         const last = copy[copy.length - 1];
         if (last && last.role === 'assistant') {
           copy[copy.length - 1] = { 
             ...last, 
-            content: `Sorry, I encountered an error. Please try again. (${err.message || 'Unknown error'})`
+            content: errorMessage
           };
         }
         return copy;
