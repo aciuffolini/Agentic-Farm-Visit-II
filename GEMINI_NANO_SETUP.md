@@ -1,111 +1,70 @@
 # Gemini Nano Setup Guide
 
-## 📱 Current Implementation
+## 📱 Instrucciones para el Teléfono
 
-### Status: Mock Interface Ready
+### 1. Requisitos del Dispositivo
 
-The app now has a **Gemini Nano integration layer** that:
-- ✅ Provides interface for on-device LLM
-- ✅ Currently uses mock implementation
-- ✅ Ready for actual SDK integration
+- **Android 14+ (API 34+)** - Requerido para AICore y Gemini Nano
+- **Dispositivo compatible**: Pixel 8 Pro/9 y otros flagships con AICore
+- **Espacio**: ~2-3 GB libres para descargar el modelo Nano
 
-### Files Created
+### 2. Verificar Compatibilidad
 
-1. **`apps/web/src/lib/llm/GeminiNano.ts`**
-   - GeminiNano class with full interface
-   - Mock implementation for development
-   - Ready for SDK replacement
+Antes de instalar la app:
+1. Ve a: `Settings → About Phone`
+2. Verifica que `Android Version` sea **14 o superior**
+3. Si tienes Android 13 o inferior, Gemini Nano **NO funcionará**
 
-2. **Integration Points**:
-   - `FieldAgent` uses Gemini Nano for extraction
-   - `ChatDrawer` uses Gemini Nano as primary LLM
-   - Falls back to server streaming if unavailable
+### 3. Instalar la App
 
----
+1. Descarga el APK desde GitHub Releases
+2. Permite "Instalar apps desconocidas" en Chrome/File Manager
+3. Instala el APK
+4. **Primera vez**: La app descargará automáticamente el modelo Gemini Nano (~2GB)
+   - Asegúrate de tener WiFi conectado
+   - No cierres la app durante la descarga
 
-## 🔧 Future: Real Gemini Nano Integration
+### 4. Verificar que Funciona
 
-### When Gemini Nano SDK is Available
+1. Abre la app
+2. Ingresa la contraseña
+3. Abre el chat (botón "Chat")
+4. Escribe algo como: "help"
+5. Si funciona, verás respuesta del chatbot
+6. Si no funciona, verás mensaje de error
 
-**Replace mock implementation** in `GeminiNano.ts`:
+## 🔧 Configuración Técnica
 
-```typescript
-import { GeminiNano } from '@google/gemini-nano'; // Example SDK
+### Java Dependencies
 
-export class GeminiNano {
-  private model: GeminiNano;
-
-  constructor() {
-    this.model = new GeminiNano({
-      model: "gemini-nano",
-    });
-  }
-
-  async generate(input: GeminiNanoInput): Promise<GeminiNanoOutput> {
-    // Real SDK call
-    const response = await this.model.generate({
-      prompt: input.text,
-      image: input.image,
-      audio: input.audio,
-      location: input.location,
-    });
-    
-    return {
-      text: response.text,
-      structured: response.structured,
-      confidence: response.confidence,
-    };
-  }
-
-  async *stream(input: GeminiNanoInput): AsyncGenerator<string> {
-    // Real streaming
-    const stream = await this.model.stream(input);
-    for await (const chunk of stream) {
-      yield chunk;
-    }
-  }
-}
+Ya incluido en `build.gradle`:
+```gradle
+implementation 'com.google.mlkit:genai-prompt:1.0.0-alpha01'
 ```
 
-### Android Integration
+### Import Statements Correctos
 
-**Capacitor Plugin** (future):
-```typescript
-import { Capacitor } from '@capacitor/core';
-
-if (Capacitor.isNativePlatform()) {
-  // Use native Gemini Nano SDK
-} else {
-  // Use web fallback or mock
-}
+El plugin Java usa:
+```java
+import com.google.mlkit.genai.prompt.*;
 ```
 
----
+## ❌ Troubleshooting
 
-## ✅ Current Capabilities (Mock)
+### "Model not available"
+- **Causa**: Dispositivo no compatible o Android < 14
+- **Solución**: Usar dispositivo con Android 14+ y AICore
 
-Even with mock implementation:
+### "Failed to download model"
+- **Causa**: Sin conexión a internet o espacio insuficiente
+- **Solución**: Conectar WiFi y liberar espacio
 
-1. **Field Extraction**: Simple keyword extraction works
-2. **Chat**: Mock streaming provides good UX
-3. **Image Analysis**: Placeholder ready for implementation
-4. **Error Handling**: Proper fallbacks in place
+### App crashea al abrir chat
+- **Causa**: Plugin no registrado correctamente
+- **Solución**: Rebuild del APK y reinstalar
 
-**The app works end-to-end**, just needs real Gemini Nano SDK for production.
+## 📝 Notas
 
----
-
-## 🧪 Testing
-
-The mock implementation allows you to:
-- ✅ Test agent routing
-- ✅ Test chat interface
-- ✅ Test field extraction flow
-- ✅ Verify UI/UX improvements
-
-**When Gemini Nano SDK is available, swap the implementation and it will work seamlessly!**
-
----
-
-**Architecture is ready. Just needs the actual SDK!** 🚀
-
+- El modelo se descarga una sola vez y queda en el dispositivo
+- Funciona **100% offline** después de la descarga inicial
+- No requiere API key (usa AICore nativo de Android)

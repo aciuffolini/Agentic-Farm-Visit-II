@@ -244,7 +244,18 @@ export function FieldVisit() {
             </button>
             
             <button
-              onClick={recording ? stopRecording : startRecording}
+              onClick={async () => {
+                try {
+                  if (recording) {
+                    await stopRecording();
+                  } else {
+                    await startRecording();
+                  }
+                } catch (err: any) {
+                  console.error('[FieldVisit] Recording error:', err);
+                  // Error is already shown by useMicrophone hook
+                }
+              }}
               disabled={audioLoading}
               className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm hover:shadow disabled:opacity-50"
             >

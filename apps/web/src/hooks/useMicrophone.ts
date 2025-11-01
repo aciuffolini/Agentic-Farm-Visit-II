@@ -15,11 +15,14 @@ export function useMicrophone() {
 
   const startRecording = async () => {
     try {
+      console.log('[useMicrophone] Starting recording...');
       await manager.startRecording();
       setRecording(true);
       setAudioUrl(null);
+      console.log('[useMicrophone] Recording started successfully');
     } catch (err: any) {
-      console.error('Recording error:', err);
+      console.error('[useMicrophone] Recording error:', err);
+      alert(`Failed to start recording: ${err.message || 'Unknown error'}\n\nPlease check microphone permissions in your device settings.`);
       throw err;
     }
   };
@@ -27,13 +30,16 @@ export function useMicrophone() {
   const stopRecording = async (): Promise<string> => {
     setLoading(true);
     try {
+      console.log('[useMicrophone] Stopping recording...');
       const url = await manager.stopRecording();
+      console.log('[useMicrophone] Recording stopped, audio URL:', url ? 'generated' : 'missing');
       setAudioUrl(url);
       setRecording(false);
       return url;
     } catch (err: any) {
-      console.error('Stop recording error:', err);
+      console.error('[useMicrophone] Stop recording error:', err);
       setRecording(false);
+      alert(`Failed to stop recording: ${err.message || 'Unknown error'}`);
       throw err;
     } finally {
       setLoading(false);

@@ -94,54 +94,167 @@ export class AndroidProvider implements ISensorProvider {
   }
 
   async startRecording(): Promise<void> {
+    console.log('[AndroidProvider] Starting recording...');
+    
+    // Check MediaRecorder support
+    if (typeof MediaRecorder === 'undefined') {
+      throw new Error('MediaRecorder is not supported in this browser');
+    }
+
     // Request microphone permission
     const perms = await this.checkPermissions();
+    console.log('[AndroidProvider] Permissions:', perms);
+    
     if (perms.microphone !== 'granted') {
+      console.log('[AndroidProvider] Requesting microphone permission...');
       const requested = await this.requestPermissions();
       if (requested.microphone !== 'granted') {
-        throw new Error('Microphone permission denied');
+        throw new Error('Microphone permission denied. Please enable microphone access in app settings.');
       }
     }
 
-    // Use Web Audio API (works on Android via Capacitor WebView)
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    this.audioRecording = new MediaRecorder(stream);
-    this.audioChunks = [];
+    try {
+      // Use Web Audio API (works on Android via Capacitor WebView)
+      console.log('[AndroidProvider] Requesting media stream...');
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      });
+      console.log('[AndroidProvider] Media stream obtained');
 
-    this.audioRecording.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        this.audioChunks.push(event.data);
+      // Find supported MIME type
+      const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+        'audio/wav',
+      ];
+
+      let selectedMimeType = '';
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          console.log('[AndroidProvider] Using MIME type:', mimeType);
+          break;
+        }
       }
-    };
 
-    this.audioRecording.start();
+      if (!selectedMimeType) {
+        console.warn('[AndroidProvider] No supported MIME type found, using default');
+      }
+
+      this.audioRecording = new MediaRecorder(stream, {
+        mimeType: selectedMimeType,
+        audioBitsPerSecond: 128000,
+      });
+      this.audioChunks = [];
+
+      this.audioRecording.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          console.log('[AndroidProvider] Data available:', event.data.size, 'bytes');
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      this.audioRecording.onerror = (event: any) => {
+        console.error('[AndroidProvider] MediaRecorder error:', event.error);
+      };
+
+      this.audioRecording.onstart = () => {
+        console.log('[AndroidProvider] Recording started');
+      };
+
+      this.audioRecording.onstop = () => {
+        console.log('[AndroidProvider] Recording stopped, chunks:', this.audioChunks.length);
+      };
+
+      // Start recording with timeslice to get chunks periodically
+      this.audioRecording.start(1000);
+      console.log('[AndroidProvider] Recording started successfully');
+    } catch (err: any) {
+      console.error('[AndroidProvider] Start recording error:', err);
+      throw new Error(`Failed to start recording: ${err.message || 'Unknown error'}`);
+    }
   }
 
   async stopRecording(): Promise<string> {
     return new Promise((resolve, reject) => {
       if (!this.audioRecording) {
+        console.warn('[AndroidProvider] No active recording to stop');
         reject(new Error('No active recording'));
         return;
       }
 
-      this.audioRecording.onstop = async () => {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-        const reader = new FileReader();
-        
-        reader.onloadend = () => {
-          const dataUrl = reader.result as string;
-          resolve(dataUrl);
-        };
-        
-        reader.onerror = reject;
-        reader.readAsDataURL(audioBlob);
+      console.log('[AndroidProvider] Stopping recording...');
 
-        // Stop all tracks
-        this.audioRecording?.stream.getTracks().forEach(track => track.stop());
-        this.audioRecording = null;
-        this.audioChunks = [];
+      // Set up stop handler before stopping
+      const onStopHandler = async () => {
+        try {
+          console.log('[AndroidProvider] Processing audio chunks:', this.audioChunks.length);
+          
+          if (this.audioChunks.length === 0) {
+            reject(new Error('No audio data recorded'));
+            return;
+          }
+
+          // Determine MIME type from chunks or use default
+          const mimeType = this.audioRecording?.mimeType || 'audio/webm';
+          console.log('[AndroidProvider] Creating blob with type:', mimeType);
+          
+          const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+          console.log('[AndroidProvider] Blob created, size:', audioBlob.size, 'bytes');
+
+          if (audioBlob.size === 0) {
+            reject(new Error('Recorded audio is empty'));
+            return;
+          }
+
+          const reader = new FileReader();
+          
+          reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            console.log('[AndroidProvider] Audio data URL generated, length:', dataUrl.length);
+            resolve(dataUrl);
+          };
+          
+          reader.onerror = (error) => {
+            console.error('[AndroidProvider] FileReader error:', error);
+            reject(new Error('Failed to read audio data'));
+          };
+          
+          reader.readAsDataURL(audioBlob);
+
+          // Stop all tracks
+          if (this.audioRecording?.stream) {
+            this.audioRecording.stream.getTracks().forEach(track => {
+              track.stop();
+              console.log('[AndroidProvider] Stopped track:', track.kind);
+            });
+          }
+          
+          this.audioRecording = null;
+          this.audioChunks = [];
+        } catch (err: any) {
+          console.error('[AndroidProvider] Error in stop handler:', err);
+          reject(err);
+        }
       };
 
+      // Remove previous onstop handler if any and set new one
+      this.audioRecording.onstop = onStopHandler;
+
+      // Request final data chunk before stopping
+      try {
+        this.audioRecording.requestData();
+      } catch (e) {
+        console.warn('[AndroidProvider] requestData() not supported, continuing...');
+      }
+
+      // Stop recording
       this.audioRecording.stop();
     });
   }

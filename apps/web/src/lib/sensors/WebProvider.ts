@@ -102,41 +102,149 @@ export class WebProvider implements ISensorProvider {
   }
 
   async startRecording(): Promise<void> {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    this.audioRecording = new MediaRecorder(stream);
-    this.audioChunks = [];
+    console.log('[WebProvider] Starting recording...');
+    
+    // Check MediaRecorder support
+    if (typeof MediaRecorder === 'undefined') {
+      throw new Error('MediaRecorder is not supported in this browser');
+    }
 
-    this.audioRecording.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        this.audioChunks.push(event.data);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      });
+      console.log('[WebProvider] Media stream obtained');
+
+      // Find supported MIME type
+      const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+        'audio/wav',
+      ];
+
+      let selectedMimeType = '';
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          console.log('[WebProvider] Using MIME type:', mimeType);
+          break;
+        }
       }
-    };
 
-    this.audioRecording.start();
+      this.audioRecording = new MediaRecorder(stream, {
+        mimeType: selectedMimeType,
+        audioBitsPerSecond: 128000,
+      });
+      this.audioChunks = [];
+
+      this.audioRecording.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          console.log('[WebProvider] Data available:', event.data.size, 'bytes');
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      this.audioRecording.onerror = (event: any) => {
+        console.error('[WebProvider] MediaRecorder error:', event.error);
+      };
+
+      this.audioRecording.onstart = () => {
+        console.log('[WebProvider] Recording started');
+      };
+
+      this.audioRecording.onstop = () => {
+        console.log('[WebProvider] Recording stopped, chunks:', this.audioChunks.length);
+      };
+
+      // Start recording with timeslice to get chunks periodically
+      this.audioRecording.start(1000);
+      console.log('[WebProvider] Recording started successfully');
+    } catch (err: any) {
+      console.error('[WebProvider] Start recording error:', err);
+      throw new Error(`Failed to start recording: ${err.message || 'Unknown error'}`);
+    }
   }
 
   async stopRecording(): Promise<string> {
     return new Promise((resolve, reject) => {
       if (!this.audioRecording) {
+        console.warn('[WebProvider] No active recording to stop');
         reject(new Error('No active recording'));
         return;
       }
 
-      this.audioRecording.onstop = () => {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-        const reader = new FileReader();
-        
-        reader.onloadend = () => {
-          resolve(reader.result as string);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(audioBlob);
+      console.log('[WebProvider] Stopping recording...');
 
-        this.audioRecording?.stream.getTracks().forEach(track => track.stop());
-        this.audioRecording = null;
-        this.audioChunks = [];
+      // Set up stop handler before stopping
+      const onStopHandler = async () => {
+        try {
+          console.log('[WebProvider] Processing audio chunks:', this.audioChunks.length);
+          
+          if (this.audioChunks.length === 0) {
+            reject(new Error('No audio data recorded'));
+            return;
+          }
+
+          // Determine MIME type from chunks or use default
+          const mimeType = this.audioRecording?.mimeType || 'audio/webm';
+          console.log('[WebProvider] Creating blob with type:', mimeType);
+          
+          const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+          console.log('[WebProvider] Blob created, size:', audioBlob.size, 'bytes');
+
+          if (audioBlob.size === 0) {
+            reject(new Error('Recorded audio is empty'));
+            return;
+          }
+
+          const reader = new FileReader();
+          
+          reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            console.log('[WebProvider] Audio data URL generated, length:', dataUrl.length);
+            resolve(dataUrl);
+          };
+          
+          reader.onerror = (error) => {
+            console.error('[WebProvider] FileReader error:', error);
+            reject(new Error('Failed to read audio data'));
+          };
+          
+          reader.readAsDataURL(audioBlob);
+
+          // Stop all tracks
+          if (this.audioRecording?.stream) {
+            this.audioRecording.stream.getTracks().forEach(track => {
+              track.stop();
+              console.log('[WebProvider] Stopped track:', track.kind);
+            });
+          }
+          
+          this.audioRecording = null;
+          this.audioChunks = [];
+        } catch (err: any) {
+          console.error('[WebProvider] Error in stop handler:', err);
+          reject(err);
+        }
       };
 
+      // Remove previous onstop handler if any and set new one
+      this.audioRecording.onstop = onStopHandler;
+
+      // Request final data chunk before stopping
+      try {
+        this.audioRecording.requestData();
+      } catch (e) {
+        console.warn('[WebProvider] requestData() not supported, continuing...');
+      }
+
+      // Stop recording
       this.audioRecording.stop();
     });
   }

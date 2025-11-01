@@ -52,8 +52,8 @@
 - ✅ **GPS Capture**: High-accuracy location tracking
 - ✅ **Voice Notes**: Native audio recording with transcription
 - ✅ **Photo Capture**: Native camera access
-- ✅ **AI Assistance**: Gemini Nano extracts structured fields from voice notes
-- ✅ **Real-Time Chat**: Context-aware AI assistant
+- ✅ **AI Assistance**: Gemini API or enhanced mock extracts structured fields
+- ✅ **Real-Time Chat**: Context-aware AI assistant (Gemini API recommended)
 - ✅ **Offline Sync**: Outbox pattern for network failures
 - ✅ **Farm Mapping**: KMZ/KML support from Google Earth
 
@@ -104,6 +104,13 @@ npm install
 cd packages/shared
 npm run build
 cd ../..
+
+# Configure Gemini API (optional but recommended for chatbot)
+# Create apps/web/.env file:
+#   VITE_GEMINI_API_KEY=your_api_key_here
+# Get API key from: https://makersuite.google.com/app/apikey or https://ai.google.dev/
+# 
+# Note: Without API key, the chatbot will use an enhanced mock mode with smart responses
 
 # Development server
 cd apps/web
