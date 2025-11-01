@@ -46,6 +46,7 @@ jobs:
         run: |
           npm install --legacy-peer-deps || npm install
           echo "✅ Root dependencies installed"
+          npm list --depth=0 || echo "⚠️ Some dependencies may have warnings"
       
       - name: Build shared package
         run: |
@@ -120,7 +121,11 @@ jobs:
           cd apps/web/android
           chmod +x gradlew
           chmod +x gradlew.bat || true
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tee build.log || {
+            echo "❌ Gradle build failed"
+            tail -100 build.log || echo "Could not read build log"
+            exit 1
+          }
           echo "✅ APK build completed"
       
       - name: Verify APK exists
