@@ -33,7 +33,7 @@
    - Go to: `Settings → Security → Install unknown apps`
    - Enable for your browser (Chrome/Edge)
 3. **Install APK** from your Downloads folder
-4. **Launch app** and confirm identity when prompted
+4. **Launch app** and enter password when prompted
 
 > **Note**: The APK will be available after the first release is created. If you don't see the download button, check [How to Build APK](#-building-from-source).
 
@@ -251,9 +251,9 @@ This repository is **public** for device testing, but **API endpoints are protec
 
 ### App Authentication
 
-**Identity Verification**: The app requires identity confirmation for access.
+**Password Protection**: The app requires a password for access.
 
-The app will prompt "¿Eres Atilio Ciuffolini?" on launch. Only confirmed identity grants access.
+The app will prompt for password on launch. Contact **aciuffolini@teknal.com.ar** for access.
 
 ### Permissions & Access
 
