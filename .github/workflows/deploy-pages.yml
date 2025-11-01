@@ -6,11 +6,6 @@ on:
       - main
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -18,6 +13,10 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -34,16 +33,31 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
+          npm install --legacy-peer-deps
+          echo "✅ Root dependencies installed"
+
+      - name: Build shared package
+        run: |
           cd packages/shared
-          npm ci
+          npm install --legacy-peer-deps || npm install
           npm run build
+          echo "✅ Shared package built"
+          if [ ! -d "dist" ]; then
+            echo "❌ dist directory not found in shared package!"
+            exit 1
+          fi
 
       - name: Build web app
         run: |
           cd apps/web
-          npm ci
+          npm install --legacy-peer-deps || npm install
           npm run build
+          echo "✅ Web app built"
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ dist/index.html not found!"
+            ls -la dist/ || echo "dist directory does not exist"
+            exit 1
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
