@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * Chat Drawer Component
+ * Simplified - uses only Gemini Nano for now
+ */
+
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { streamChat } from '../lib/api';
 import { ChatMessage } from '@farm-visit/shared';
-import { swarmTaskRouter } from '../lib/agents/SwarmTaskRouter';
 import { geminiNano } from '../lib/llm/GeminiNano';
 
 interface ChatDrawerProps {
@@ -25,99 +28,39 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     setInput('');
     setBusy(true);
 
-    // Get visit context
-    const visitContext = (window as any).__VISIT_CONTEXT__ || null;
-    const meta = {
-      visit: visitContext,
-    };
+    // Create assistant message placeholder
+    const assistantMsg: ChatMessage = { role: 'assistant', content: '' };
+    setMessages((m) => [...m, assistantMsg]);
 
     try {
-      // Check if this is a task that should be routed to an agent
-      const intent = detectIntent(userMsg.content);
+      // Use Gemini Nano only (will be tuned in future)
+      const visitContext = (window as any).__VISIT_CONTEXT__;
       
-      if (intent && intent !== 'chat') {
-        // Route to appropriate agent via swarm
-        try {
-          const result = await swarmTaskRouter.route(
-            intent,
-            { question: userMsg.content, messages },
-            { visit: visitContext }
-          );
-          
-          const assistantMsg: ChatMessage = {
-            role: 'assistant',
-            content: typeof result.result === 'string' 
-              ? result.result 
-              : JSON.stringify(result.result, null, 2),
-          };
-          setMessages((m) => [...m, assistantMsg]);
-          return;
-        } catch (agentErr) {
-          console.warn("Agent routing failed, falling back to chat:", agentErr);
-        }
-      }
-
-      // Default: Use Gemini Nano (on-device) or streaming chat
-      const assistantMsg: ChatMessage = { role: 'assistant', content: '' };
-      setMessages((m) => [...m, assistantMsg]);
-
-      // Try Gemini Nano first (offline, on-device)
-      try {
-        const visitContext = (window as any).__VISIT_CONTEXT__;
-        
-        // Stream response for better UX
-        for await (const chunk of geminiNano.stream({
-          text: userMsg.content,
-          location: visitContext?.gps 
-            ? { lat: visitContext.gps.lat, lon: visitContext.gps.lon }
-            : undefined,
-        })) {
-          setMessages((m) => {
-            const copy = [...m];
-            const last = copy[copy.length - 1];
-            if (last && last.role === 'assistant') {
-              copy[copy.length - 1] = { ...last, content: last.content + chunk };
-            }
-            return copy;
-          });
-        }
-        return;
-      } catch (nanoErr) {
-        console.warn("Gemini Nano failed, falling back to streaming chat:", nanoErr);
-        
-        // Fallback: Use server streaming chat
-        try {
-          for await (const chunk of streamChat([...messages, userMsg], meta)) {
-            setMessages((m) => {
-              const copy = [...m];
-              const last = copy[copy.length - 1];
-              if (last && last.role === 'assistant') {
-                copy[copy.length - 1] = { ...last, content: last.content + chunk };
-              }
-              return copy;
-            });
+      // Stream response from Gemini Nano
+      for await (const chunk of geminiNano.stream({
+        text: userMsg.content,
+        location: visitContext?.gps 
+          ? { lat: visitContext.gps.lat, lon: visitContext.gps.lon }
+          : undefined,
+      })) {
+        setMessages((m) => {
+          const copy = [...m];
+          const last = copy[copy.length - 1];
+          if (last && last.role === 'assistant') {
+            copy[copy.length - 1] = { ...last, content: last.content + chunk };
           }
-        } catch (streamErr) {
-          // Final fallback: Simple response
-          setMessages((m) => {
-            const copy = [...m];
-            const last = copy[copy.length - 1];
-            if (last && last.role === 'assistant') {
-              copy[copy.length - 1] = { 
-                ...last, 
-                content: "I'm here to help with your field visits! Try asking about crops, pests, diseases, or help with recording visit data."
-              };
-            }
-            return copy;
-          });
-        }
+          return copy;
+        });
       }
     } catch (err: any) {
       setMessages((m) => {
         const copy = [...m];
         const last = copy[copy.length - 1];
         if (last && last.role === 'assistant') {
-          copy[copy.length - 1] = { ...last, content: `Error: ${err.message}` };
+          copy[copy.length - 1] = { 
+            ...last, 
+            content: `Sorry, I encountered an error. Please try again. (${err.message || 'Unknown error'})`
+          };
         }
         return copy;
       });
@@ -137,7 +80,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
           className="fixed right-0 top-0 z-40 h-full w-[min(500px,95vw)] border-l border-slate-200 bg-white shadow-xl flex flex-col"
         >
           <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200">
-            <div className="font-semibold">AI Assistant</div>
+            <div className="font-semibold">AI Assistant (Gemini Nano)</div>
             <button onClick={onClose} className="text-slate-500 text-sm">
               Close
             </button>
@@ -184,28 +127,6 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   );
 }
 
-/**
- * Simple intent detection for routing to agents
- */
-function detectIntent(message: string): string | null {
-  const lower = message.toLowerCase();
-  
-  if (lower.includes('analyze') || lower.includes('diagnose') || lower.includes('disease')) {
-    return 'diagnostic';
-  }
-  if (lower.includes('plan') || lower.includes('treatment') || lower.includes('schedule')) {
-    return 'planning';
-  }
-  if (lower.includes('trend') || lower.includes('analyze') || lower.includes('history')) {
-    return 'analytics';
-  }
-  if (lower.includes('extract') || lower.includes('field') || lower.includes('visit')) {
-    return 'extract_fields';
-  }
-  
-  return null; // Default to chat
-}
-
 function ChatBubble({ who, text, align }: { who: string; text: string; align: 'left' | 'right' }) {
   return (
     <div className={`flex ${align === 'right' ? 'justify-end' : ''}`}>
@@ -222,4 +143,3 @@ function ChatBubble({ who, text, align }: { who: string; text: string; align: 'l
     </div>
   );
 }
-
