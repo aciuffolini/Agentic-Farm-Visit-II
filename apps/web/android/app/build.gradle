@@ -40,7 +40,7 @@ dependencies {
     // ML Kit GenAI for Gemini Nano on-device
     // Note: Requires Android 14+ (API 34+) for full AICore support
     // Works on Android 7+ (API 24+) but AICore features need Android 14+
-    implementation 'com.google.mlkit:genai-prompt:1.0.0-alpha01'
+    implementation 'com.google.mlkit:genai-prompt:1.0.0-alpha1'
     
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

@@ -11,23 +11,24 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-// ML Kit GenAI Prompt API imports
-// Note: ML Kit GenAI API structure - will need to verify exact package based on actual library
-// Current implementation attempts common patterns, but may need adjustment
-import com.google.mlkit.genai.prompt.Generation;
-import com.google.mlkit.genai.prompt.FeatureStatus;
+// ML Kit GenAI Generative API imports (CORRECT PACKAGE STRUCTURE)
+import com.google.mlkit.genai.generative.FeatureStatus;
+import com.google.mlkit.genai.generative.Generation;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 /**
- * Capacitor Plugin for Gemini Nano on-device using ML Kit GenAI Prompt API
+ * Capacitor Plugin for Gemini Nano on-device using ML Kit GenAI Generative API
  * Requires Android 14+ (API 34+) with AICore support
+ * 
+ * Uses correct package: com.google.mlkit.genai.generative.*
+ * Dependency: com.google.mlkit:genai-prompt:1.0.0-alpha1
  */
 @CapacitorPlugin(name = "GeminiNano")
 public class GeminiNanoPlugin extends Plugin {
 
-    private com.google.mlkit.genai.prompt.Generation model;
+    private com.google.mlkit.genai.generative.Generation model;
     private boolean modelInitialized = false;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Executor backgroundExecutor = Executors.newSingleThreadExecutor();
@@ -48,22 +49,32 @@ public class GeminiNanoPlugin extends Plugin {
         }
 
         try {
-            // Get ML Kit GenAI client
+            // Get ML Kit GenAI client (CORRECT API)
             android.util.Log.d("GeminiNano", "Attempting to get Generation client...");
             model = Generation.getClient();
             android.util.Log.d("GeminiNano", "Got Generation client, checking status...");
             
             FeatureStatus status = model.checkStatus();
-            android.util.Log.d("GeminiNano", "Status: " + status.toString());
+            android.util.Log.d("GeminiNano", "Status: " + status.name());
             
-            ret.put("available", status == FeatureStatus.AVAILABLE || status == FeatureStatus.DOWNLOADABLE);
-            ret.put("status", status.toString());
+            // Check status enum (UNAVAILABLE, DOWNLOADABLE, DOWNLOADING, AVAILABLE)
+            boolean isAvailable = (status == FeatureStatus.AVAILABLE || 
+                                  status == FeatureStatus.DOWNLOADABLE || 
+                                  status == FeatureStatus.DOWNLOADING);
+            
+            ret.put("available", isAvailable);
+            ret.put("status", status.name());
             
             if (status == FeatureStatus.DOWNLOADABLE) {
                 ret.put("downloadable", true);
                 android.util.Log.d("GeminiNano", "Model is downloadable");
             } else if (status == FeatureStatus.AVAILABLE) {
                 android.util.Log.d("GeminiNano", "Model is already available");
+            } else if (status == FeatureStatus.UNAVAILABLE) {
+                android.util.Log.w("GeminiNano", "Model unavailable - device not supported");
+                ret.put("reason", "Device not supported (no AICore / not eligible)");
+            } else if (status == FeatureStatus.DOWNLOADING) {
+                android.util.Log.d("GeminiNano", "Model is currently downloading");
             }
         } catch (NoClassDefFoundError e) {
             android.util.Log.e("GeminiNano", "Class not found error: " + e.getMessage());
@@ -92,34 +103,55 @@ public class GeminiNanoPlugin extends Plugin {
             android.util.Log.d("GeminiNano", "Initializing model...");
             model = Generation.getClient();
             FeatureStatus status = model.checkStatus();
-            android.util.Log.d("GeminiNano", "Initialize status: " + status.toString());
+            android.util.Log.d("GeminiNano", "Initialize status: " + status.name());
             
-            if (status == FeatureStatus.DOWNLOADABLE) {
-                android.util.Log.d("GeminiNano", "Starting model download...");
-                // Download model in background
-                model.download()
-                    .addOnSuccessListener(aVoid -> {
-                        android.util.Log.d("GeminiNano", "Model download successful");
-                        modelInitialized = true;
-                        JSObject ret = new JSObject();
-                        ret.put("initialized", true);
-                        ret.put("message", "Model downloaded successfully");
-                        call.resolve(ret);
-                    })
-                    .addOnFailureListener(e -> {
-                        android.util.Log.e("GeminiNano", "Model download failed: " + e.getMessage(), e);
-                        call.reject("Failed to download model: " + e.getMessage());
-                    });
-            } else if (status == FeatureStatus.AVAILABLE) {
-                android.util.Log.d("GeminiNano", "Model already available, marking as initialized");
-                modelInitialized = true;
-                JSObject ret = new JSObject();
-                ret.put("initialized", true);
-                ret.put("message", "Model already available");
-                call.resolve(ret);
-            } else {
-                android.util.Log.w("GeminiNano", "Model not available. Status: " + status);
-                call.reject("Model not available. Status: " + status);
+            // Handle all possible status values according to ML Kit API
+            switch (status) {
+                case UNAVAILABLE:
+                    android.util.Log.w("GeminiNano", "Model unavailable - device not supported");
+                    call.reject("Device not supported (no AICore / not eligible)");
+                    return;
+                    
+                case DOWNLOADABLE:
+                    android.util.Log.d("GeminiNano", "Starting model download...");
+                    // Download model in background
+                    model.download()
+                        .addOnSuccessListener(aVoid -> {
+                            android.util.Log.d("GeminiNano", "Model download successful");
+                            modelInitialized = true;
+                            JSObject ret = new JSObject();
+                            ret.put("initialized", true);
+                            ret.put("message", "Model downloaded successfully");
+                            call.resolve(ret);
+                        })
+                        .addOnFailureListener(e -> {
+                            android.util.Log.e("GeminiNano", "Model download failed: " + e.getMessage(), e);
+                            call.reject("Failed to download model: " + e.getMessage());
+                        });
+                    return;
+                    
+                case DOWNLOADING:
+                    android.util.Log.d("GeminiNano", "Model is currently downloading, waiting...");
+                    // Model is already downloading, mark as initializing
+                    JSObject ret = new JSObject();
+                    ret.put("initialized", false);
+                    ret.put("message", "Model is currently downloading, please wait");
+                    call.resolve(ret);
+                    return;
+                    
+                case AVAILABLE:
+                    android.util.Log.d("GeminiNano", "Model already available, marking as initialized");
+                    modelInitialized = true;
+                    JSObject ret2 = new JSObject();
+                    ret2.put("initialized", true);
+                    ret2.put("message", "Model already available");
+                    call.resolve(ret2);
+                    return;
+                    
+                default:
+                    android.util.Log.w("GeminiNano", "Unknown status: " + status);
+                    call.reject("Model not available. Unknown status: " + status);
+                    return;
             }
         } catch (NoClassDefFoundError e) {
             android.util.Log.e("GeminiNano", "Class not found during initialization: " + e.getMessage());
@@ -146,16 +178,23 @@ public class GeminiNanoPlugin extends Plugin {
             return;
         }
 
-        // Generate response using ML Kit GenAI Prompt API
-        // Note: Actual API may vary - check ML Kit documentation for exact method
+        // Generate response using ML Kit GenAI Generative API
+        android.util.Log.d("GeminiNano", "Generating content for prompt: " + prompt.substring(0, Math.min(50, prompt.length())));
         model.generateContent(prompt)
             .addOnSuccessListener(result -> {
                 String responseText = result.getText();
+                android.util.Log.d("GeminiNano", "Generation successful, response length: " + (responseText != null ? responseText.length() : 0));
+                if (responseText == null || responseText.isEmpty()) {
+                    android.util.Log.w("GeminiNano", "Empty response from model");
+                    call.reject("Empty response from model");
+                    return;
+                }
                 JSObject ret = new JSObject();
                 ret.put("text", responseText);
                 call.resolve(ret);
             })
             .addOnFailureListener(e -> {
+                android.util.Log.e("GeminiNano", "Generation failed: " + e.getMessage(), e);
                 call.reject("Generation failed: " + e.getMessage());
             });
     }
