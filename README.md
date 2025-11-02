@@ -368,6 +368,25 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 
 ---
 
+## 📝 Last Commit
+
+<details>
+<summary><b>🔄 Latest Changes</b></summary>
+
+**Last Commit**: `e845ff7` - fix: correct ML Kit GenAI package structure and dependency version (2025-11-01)
+
+**Latest Version**: v1.0.6
+
+### 📱 Download Latest APK
+
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.6-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+
+**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
+
+</details>
+
+---
+
 <div align="center">
 
 **Made with ❤️ for farmers**
