@@ -373,26 +373,31 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Last Commit**: `7a17b2d` - fix: improve API key UI visibility and auto-prompt (2025-11-03)
+**Last Commit**: `35e6cef` - feat: add structured visit context to chatbot prompts
 
 **Latest Version**: v1.0.7
 
 ### ✨ What's New
 
-- **API Key UI (IMPROVED)**: Much more visible and user-friendly
-  - **Color-coded button**: Amber if missing, Green if set
-  - **Auto-prompt**: API key input appears automatically 1 second after opening chat
-  - **Initial message**: Prompts user to set API key when needed
-  - **Better errors**: Clear instructions when API key is required
+- **Structured Visit Context**: Chatbot now receives full visit context
+  - **Current visit data**: GPS location, notes, photos, audio recordings
+  - **Latest saved visit**: Field ID, crop, issue, severity, photo/audio URLs
+  - **Context-aware responses**: Uses visit data for specific, relevant answers
 
-- **Chat Functionality**: Fixed and improved
-  - Proper error handling for missing API keys
-  - Auto-opens API key input on errors
-  - Clear instructions in messages
+- **Offline-First Priority**: Fixed fallback order
+  - **Priority 1**: Gemini Nano (offline, Android 14+)
+  - **Priority 2**: Llama Local (offline, small model for Q&A)
+  - **Priority 3**: Cloud API (online, requires API key)
+
+- **API Key UI**: Improved visibility and auto-prompt
+  - Color-coded button (amber/green)
+  - Auto-prompt after 1 second
+  - Clear error messages
 
 - **Version**: **v1.0.7**
-  - Enhanced UX for API key configuration
-  - Improved visibility and prompts
+  - Structured visit context in prompts
+  - Offline-first architecture
+  - Enhanced chatbot with visit data
 
 ### 📱 Download Latest APK
 
