@@ -4,6 +4,7 @@
  */
 
 import { ChatMessage, Visit } from '@farm-visit/shared';
+import { getUserApiKey } from './config/userKey';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -32,9 +33,24 @@ export async function* streamChat(
   messages: ChatMessage[],
   meta?: ChatRequest['meta']
 ): AsyncGenerator<string> {
+  // Build headers with optional user API key
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  // Add user API key if available (per-device, stored locally)
+  const userKey = getUserApiKey();
+  if (userKey) {
+    headers['X-API-Key'] = userKey;
+    console.log('[API] Using user-provided API key');
+  }
+  
+  // Optional: Add provider selection header (future)
+  // if (provider) headers['X-Provider'] = provider;
+
   const response = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ messages, meta }),
   });
 
@@ -116,4 +132,5 @@ export async function getVisits(params?: {
 
   return response.json();
 }
+
 

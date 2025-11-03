@@ -373,19 +373,25 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Last Commit**: `4ae29a4` - feat: add unified LLM provider with 3-tier offline fallback (2025-11-01)
+**Last Commit**: `[Will be updated after commit]` - feat: add Cloud API fallback with user API key support
 
 **Latest Version**: v1.0.6
 
 ### ✨ What's New
 
-- **Unified LLM Provider**: Automatic fallback system for chatbot
-  1. **Gemini Nano** (Android 14+) - Primary, best quality
-  2. **Llama Local** (Android 7+) - Offline fallback (ready for implementation)
-  3. **Cloud API** (Optional) - Online fallback with user API keys
+- **Cloud API Fallback Ready**: Tertiary solution for testing
+  - User API key management (stored locally, per-device)
+  - Automatic fallback: Gemini Nano → Llama → **Cloud API**
+  - Ready for testing before quantized Llama implementation
 
-- **Improved Error Messages**: Better guidance when AI models aren't available
-- **Future-Ready**: Architecture prepared for Llama Local offline support
+- **User API Key Support**: 
+  - Store API keys locally (no server secrets needed)
+  - Set via `window.setAPIKey('sk-...')` on device
+  - Sent as `X-API-Key` header to backend
+
+- **Testing Documentation**: 
+  - `TEST_CLOUD_API_FALLBACK.md` - Testing guide
+  - `CLOUD_API_TESTING_SETUP.md` - Server setup instructions
 
 ### 📱 Download Latest APK
 

@@ -72,11 +72,18 @@ export class LLMProvider {
         : `Llama Local: ${err.message}`;
     }
 
-    // Priority 3: Cloud API (if online and configured)
+    // Priority 3: Cloud API (if online)
     if (navigator.onLine) {
       try {
         console.log('[LLMProvider] Using Cloud API (Priority 3 - Online Fallback)');
         this.stats = { provider: 'cloud-api' };
+        
+        // Check if API key is available (helpful error message)
+        const { getUserApiKey } = await import('../config/userKey');
+        const hasKey = getUserApiKey();
+        if (!hasKey) {
+          console.warn('[LLMProvider] No API key found. Server may use default or require key.');
+        }
         
         const messages: ChatMessage[] = [
           {
