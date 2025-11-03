@@ -6,7 +6,7 @@
  * 3. Cloud API (optional, user-provided key)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatMessage } from '@farm-visit/shared';
 import { llmProvider } from '../lib/llm/LLMProvider';
@@ -22,9 +22,37 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   const [busy, setBusy] = useState(false);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKey, setApiKey] = useState(getUserApiKey());
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: 'Hi! I can help you with field visit information. Ask me anything!' },
-  ]);
+  
+  // Initial message with API key prompt if needed
+  const initialMessage = useMemo(() => {
+    const hasKey = getUserApiKey();
+    if (!hasKey && navigator.onLine) {
+      return {
+        role: 'assistant' as const,
+        content: '👋 Hi! I can help you with field visit information.\n\n⚠️ **To use Cloud API fallback**, please set your API key:\n\n1. Click **🔑 Set API Key** button above\n2. Enter your API key\n3. Start chatting!\n\n*(If you have Android 14+ with AICore, Gemini Nano will work automatically)*'
+      };
+    }
+    return {
+      role: 'assistant' as const,
+      content: 'Hi! I can help you with field visit information. Ask me anything!'
+    };
+  }, []);
+  
+  const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
+  
+  // Refresh API key state when drawer opens
+  useEffect(() => {
+    if (open) {
+      const currentKey = getUserApiKey();
+      setApiKey(currentKey);
+      if (!currentKey && navigator.onLine) {
+        // Auto-show API key input if online and no key
+        setTimeout(() => {
+          setShowApiKeyInput(true);
+        }, 1000);
+      }
+    }
+  }, [open]);
 
   const handleApiKeySave = () => {
     setUserApiKey(apiKey);
@@ -118,12 +146,30 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
       // Provide helpful error messages based on provider failures
       let errorMessage = 'Sorry, I encountered an error. ';
       const stats = llmProvider.getStats();
+      const hasApiKey = getUserApiKey();
       
-      if (err.message?.includes('not available') || err.message?.includes('No LLM provider available')) {
-        errorMessage += '\n\nAvailable options:\n';
+      // Check if it's a Cloud API authentication error
+      if (err.message?.includes('401') || err.message?.includes('unauthorized') || 
+          (err.message?.includes('Cloud API') && !hasApiKey && navigator.onLine)) {
+        errorMessage = '⚠️ **API Key Required for Cloud API**\n\n';
+        errorMessage += 'To use Cloud API fallback, you need to set an API key:\n\n';
+        errorMessage += '1. Click the **🔑 Set API Key** button above\n';
+        errorMessage += '2. Enter your API key (stored locally)\n';
+        errorMessage += '3. Try again\n\n';
+        errorMessage += 'Or ensure your server has a default API key configured.';
+        
+        // Automatically show API key input if not shown
+        if (!showApiKeyInput) {
+          setTimeout(() => setShowApiKeyInput(true), 500);
+        }
+      } else if (err.message?.includes('not available') || err.message?.includes('No LLM provider available')) {
+        errorMessage += '\n\n**Available options:**\n';
         errorMessage += '• Android 14+ with AICore → Gemini Nano\n';
         errorMessage += '• Any Android 7+ → Llama Local (requires model download)\n';
-        errorMessage += '• Online → Cloud API (requires API key configuration)';
+        errorMessage += '• Online → Cloud API (requires API key)\n\n';
+        if (!hasApiKey && navigator.onLine) {
+          errorMessage += '💡 **Tip:** Click **🔑 Set API Key** above to enable Cloud API.';
+        }
       } else if (err.message?.includes('not initialized')) {
         errorMessage += 'The AI model is still initializing. Please try again in a moment.';
       } else if (err.message?.includes('timeout')) {
@@ -161,32 +207,44 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
           transition={{ type: 'spring', stiffness: 260, damping: 25 }}
           className="fixed right-0 top-0 z-40 h-full w-[min(500px,95vw)] border-l border-slate-200 bg-white shadow-xl flex flex-col"
         >
-          <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200">
+          <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200 bg-slate-50">
             <div className="font-semibold">AI Assistant</div>
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50"
-                title={getUserApiKey() ? 'API key configured' : 'Set API key for Cloud API'}
+                className={`text-sm font-medium px-3 py-1.5 rounded-lg border transition ${
+                  getUserApiKey() 
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100' 
+                    : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'
+                }`}
+                title={getUserApiKey() ? 'API key configured ✓' : '⚠️ Set API key for Cloud API'}
               >
-                🔑
+                {getUserApiKey() ? '🔑 API Key Set' : '🔑 Set API Key'}
               </button>
-              <button onClick={onClose} className="text-slate-500 text-sm">
+              <button onClick={onClose} className="text-slate-500 text-sm hover:text-slate-700">
                 Close
               </button>
             </div>
           </div>
 
-          {/* API Key Input */}
+          {/* API Key Input - More Prominent */}
           {showApiKeyInput && (
-            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+            <div className="px-4 py-4 border-b-2 border-amber-200 bg-amber-50">
+              <div className="mb-2">
+                <div className="text-sm font-semibold text-amber-900 mb-1">
+                  🔑 API Key Required for Cloud API
+                </div>
+                <p className="text-xs text-amber-700">
+                  Enter your API key to use Cloud API fallback. Key is stored locally on this device.
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <input
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter API key (stored locally)"
-                  className="flex-1 text-xs px-2 py-1 rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  placeholder="sk-..."
+                  className="flex-1 text-sm px-3 py-2 rounded-lg border-2 border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleApiKeySave();
@@ -198,7 +256,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                 />
                 <button
                   onClick={handleApiKeySave}
-                  className="text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 shadow-sm"
                 >
                   Save
                 </button>
@@ -207,14 +265,11 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                     setShowApiKeyInput(false);
                     setApiKey(getUserApiKey());
                   }}
-                  className="text-xs px-2 py-1 rounded border border-slate-300 hover:bg-slate-100"
+                  className="px-3 py-2 rounded-lg border border-amber-300 bg-white hover:bg-amber-50 text-amber-700"
                 >
                   Cancel
                 </button>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1">
-                Key stored locally. Used for Cloud API fallback when Gemini Nano/Llama unavailable.
-              </p>
             </div>
           )}
 
