@@ -373,25 +373,26 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Last Commit**: `733cbb5` - feat: add API key UI and bump version to 1.0.7 (2025-11-03)
+**Last Commit**: `7a17b2d` - fix: improve API key UI visibility and auto-prompt (2025-11-03)
 
 **Latest Version**: v1.0.7
 
 ### ✨ What's New
 
-- **API Key UI**: Added 🔑 button in chat header to easily set API key
-  - Click 🔑 button to open API key input field
-  - API key stored locally (per-device, secure)
-  - No need to use console - user-friendly UI
+- **API Key UI (IMPROVED)**: Much more visible and user-friendly
+  - **Color-coded button**: Amber if missing, Green if set
+  - **Auto-prompt**: API key input appears automatically 1 second after opening chat
+  - **Initial message**: Prompts user to set API key when needed
+  - **Better errors**: Clear instructions when API key is required
 
-- **Cloud API Fallback**: Ready for testing tertiary solution
-  - Automatic fallback: Gemini Nano → Llama → **Cloud API**
-  - User API key management integrated
-  - Sent as `X-API-Key` header to backend
+- **Chat Functionality**: Fixed and improved
+  - Proper error handling for missing API keys
+  - Auto-opens API key input on errors
+  - Clear instructions in messages
 
-- **Version Update**: v1.0.6 → **v1.0.7**
-  - Improved user experience for API key configuration
-  - Better error messages
+- **Version**: **v1.0.7**
+  - Enhanced UX for API key configuration
+  - Improved visibility and prompts
 
 ### 📱 Download Latest APK
 
