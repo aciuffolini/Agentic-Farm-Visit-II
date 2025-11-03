@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.8--fix-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Android-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -20,7 +20,7 @@
 
 ### 🎯 **One-Click Download**
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 
 **Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 
@@ -373,14 +373,19 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Latest Version**: v1.0.8
+**Latest Version**: v1.0.8-fix
 
-### ✨ What's New in v1.0.8
+### ✨ What's New in v1.0.8-fix
+
+- **🔧 Bug Fixes:**
+  - Fixed GPT-4o mini integration with enhanced debug logging
+  - Fixed hardcoded prompts in Gemini Nano and Llama Local to use enhanced prompts
+  - All models now properly receive structured visit context
 
 - **🤖 Model Selection**: Choose your preferred AI model
   - **Auto Mode**: Automatically uses best available model (offline-first)
   - **Nano**: Gemini Nano for offline Android 14+ devices
-  - **ChatGPT 4o mini**: Cloud-based model (requires API key)
+  - **ChatGPT 4o mini**: Cloud-based model (requires API key and server endpoint `/api/chat`)
   - **Llama Small**: Local offline model for any Android 7+ device
 
 - **📝 Enhanced Prompt Engineering**: Improved context understanding
@@ -394,15 +399,11 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
   - Explicit model selection allows forcing specific models when needed
   - All models receive enhanced structured context
 
-- **Version**: **v1.0.8**
-  - Model selection UI in chat drawer
-  - Enhanced prompt engineering with structured visit context
-  - Improved system prompts for all models
-  - Better photo and audio recording integration in prompts
+**Note**: GPT-4o mini requires a backend server with `/api/chat` endpoint and an API key. For offline use, select Nano or Llama Small models which work without internet.
 
 ### 📱 Download Latest APK
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 
 **Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 
