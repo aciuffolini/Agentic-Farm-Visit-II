@@ -20,21 +20,22 @@
 
 ### 🎯 **One-Click Download**
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/download/v1.0.8-fix/app-debug.apk)
 
-**Or visit**: [Latest Release (v1.0.8-fix)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
+**Direct Download**: [app-debug.apk](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/download/v1.0.8-fix/app-debug.apk)  
+**Or visit**: [Release Page (v1.0.8-fix)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
 
-> **📦 To Install**: Download the APK file from the release page, then enable "Install from Unknown Sources" in your Android settings before installing.
+> **📦 To Install**: Click the green button above to download directly, or download from the release page. Then enable "Install from Unknown Sources" in your Android settings before installing.
 
 </div>
 
 ### 📋 Installation Steps
 
 1. **Download APK**:
-   - Click the green button above to go to the release page
-   - Scroll down to "Assets" section
-   - Click on the APK file (e.g., `app-debug.apk` or `farm-visit-v1.0.8-fix.apk`)
-   - The file will download to your phone
+   - **Option A**: Click the green button above - it will download the APK directly
+   - **Option B**: Click the "Direct Download" link above
+   - **Option C**: Go to the [Release Page](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix) and download from Assets section
+   - The APK file will download to your phone's Downloads folder
 
 2. **Enable Unknown Sources** (First time only):
    - Go to: `Settings → Security → Install unknown apps` (or `Settings → Apps → Special access → Install unknown apps`)
@@ -421,7 +422,9 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 
 ### 📱 Download Latest APK
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/download/v1.0.8-fix/app-debug.apk)
+
+**Direct Download**: [app-debug.apk](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/download/v1.0.8-fix/app-debug.apk)
 
 **Or visit**: [Latest Release (v1.0.8-fix)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
 
