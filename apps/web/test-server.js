@@ -123,10 +123,15 @@ const server = http.createServer(async (req, res) => {
 
         // Call OpenAI
         try {
-          // Add system prompt for farm visit context (will be enhanced with visit data if provided)
-          const systemMessage = {
-            role: 'system',
-            content: `You are a helpful agricultural field visit assistant. You help farmers and agricultural professionals with:
+          // Use messages as-is - LLMProvider already includes enhanced system prompt with visit context
+          // If messages don't have a system message, add a basic one (fallback)
+          const hasSystemMessage = messages.some(m => m.role === 'system');
+          const messagesWithSystem = hasSystemMessage 
+            ? messages 
+            : [
+                {
+                  role: 'system',
+                  content: `You are a helpful agricultural field visit assistant. You help farmers and agricultural professionals with:
 
 • Field visit data capture and organization
 • Crop identification and management advice
@@ -137,12 +142,15 @@ const server = http.createServer(async (req, res) => {
 Be concise, practical, and provide actionable advice. Use the visit context provided (GPS location, notes, photos, audio recordings, saved visit records) to give specific, relevant responses.
 
 Respond in a friendly, professional manner suitable for field work.`
-          };
-
-          // Prepend system message if not already present
-          const messagesWithSystem = messages.some(m => m.role === 'system')
-            ? messages
-            : [systemMessage, ...messages];
+                },
+                ...messages
+              ];
+          
+          // Log system message content for debugging (first 200 chars)
+          if (hasSystemMessage) {
+            const systemMsg = messages.find(m => m.role === 'system');
+            console.log('   📝 System message (with context):', systemMsg?.content?.substring(0, 200) + '...');
+          }
 
           const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',

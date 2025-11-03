@@ -373,7 +373,7 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Last Commit**: `35e6cef` - feat: add structured visit context to chatbot prompts
+**Last Commit**: `536430b` - fix: improve Android build configuration for CI
 
 **Latest Version**: v1.0.7
 
