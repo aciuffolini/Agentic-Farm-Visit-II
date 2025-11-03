@@ -24,18 +24,36 @@
 
 **Or visit**: [Latest Release (v1.0.8-fix)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
 
+> **📦 To Install**: Download the APK file from the release page, then enable "Install from Unknown Sources" in your Android settings before installing.
+
 </div>
 
 ### 📋 Installation Steps
 
-1. **Download APK** using the button above or visit [Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
-2. **Enable Unknown Sources**:
-   - Go to: `Settings → Security → Install unknown apps`
-   - Enable for your browser (Chrome/Edge)
-3. **Install APK** from your Downloads folder
-4. **Launch app** and enter password when prompted
+1. **Download APK**:
+   - Click the green button above to go to the release page
+   - Scroll down to "Assets" section
+   - Click on the APK file (e.g., `app-debug.apk` or `farm-visit-v1.0.8-fix.apk`)
+   - The file will download to your phone
 
-> **Note**: The APK will be available after the first release is created. If you don't see the download button, check [How to Build APK](#-building-from-source).
+2. **Enable Unknown Sources** (First time only):
+   - Go to: `Settings → Security → Install unknown apps` (or `Settings → Apps → Special access → Install unknown apps`)
+   - Select your browser (Chrome/Edge/Firefox)
+   - Enable "Allow from this source"
+
+3. **Install APK**:
+   - Open your Downloads folder
+   - Tap on the downloaded APK file
+   - Tap "Install"
+   - Wait for installation to complete
+
+4. **Launch app**:
+   - Open the Farm Visit app from your app drawer
+   - Enter password when prompted (contact aciuffolini@teknal.com.ar for access)
+
+> **📝 Note**: If the APK is not available on the release page, you can [build it from source](#-building-from-source) or contact the developer.
+
+> **🔧 For Developers**: See [BUILD_AND_UPLOAD_APK.md](./BUILD_AND_UPLOAD_APK.md) for instructions to build and upload the APK.
 
 ---
 
