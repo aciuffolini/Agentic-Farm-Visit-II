@@ -373,7 +373,7 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Last Commit**: `[Will be updated after commit]` - feat: add Cloud API fallback with user API key support
+**Last Commit**: `abafeff` - feat: add Cloud API fallback with user API key support (2025-11-03)
 
 **Latest Version**: v1.0.6
 
