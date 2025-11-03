@@ -373,9 +373,19 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Last Commit**: `e845ff7` - fix: correct ML Kit GenAI package structure and dependency version (2025-11-01)
+**Last Commit**: `4ae29a4` - feat: add unified LLM provider with 3-tier offline fallback (2025-11-01)
 
 **Latest Version**: v1.0.6
+
+### ✨ What's New
+
+- **Unified LLM Provider**: Automatic fallback system for chatbot
+  1. **Gemini Nano** (Android 14+) - Primary, best quality
+  2. **Llama Local** (Android 7+) - Offline fallback (ready for implementation)
+  3. **Cloud API** (Optional) - Online fallback with user API keys
+
+- **Improved Error Messages**: Better guidance when AI models aren't available
+- **Future-Ready**: Architecture prepared for Llama Local offline support
 
 ### 📱 Download Latest APK
 
