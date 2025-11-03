@@ -10,6 +10,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatMessage } from '@farm-visit/shared';
 import { llmProvider } from '../lib/llm/LLMProvider';
+import { getUserApiKey, setUserApiKey } from '../lib/config/userKey';
 
 interface ChatDrawerProps {
   open: boolean;
@@ -19,9 +20,27 @@ interface ChatDrawerProps {
 export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [apiKey, setApiKey] = useState(getUserApiKey());
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'assistant', content: 'Hi! I can help you with field visit information. Ask me anything!' },
   ]);
+
+  const handleApiKeySave = () => {
+    setUserApiKey(apiKey);
+    setShowApiKeyInput(false);
+    if (apiKey) {
+      setMessages((m) => [...m, { 
+        role: 'assistant', 
+        content: '✅ API key saved! You can now use Cloud API fallback.' 
+      }]);
+    } else {
+      setMessages((m) => [...m, { 
+        role: 'assistant', 
+        content: 'API key cleared. Server will use default key if configured.' 
+      }]);
+    }
+  };
 
   const send = async () => {
     if (!input.trim() || busy) return;
@@ -144,10 +163,60 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         >
           <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200">
             <div className="font-semibold">AI Assistant</div>
-            <button onClick={onClose} className="text-slate-500 text-sm">
-              Close
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+                className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50"
+                title={getUserApiKey() ? 'API key configured' : 'Set API key for Cloud API'}
+              >
+                🔑
+              </button>
+              <button onClick={onClose} className="text-slate-500 text-sm">
+                Close
+              </button>
+            </div>
           </div>
+
+          {/* API Key Input */}
+          {showApiKeyInput && (
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <div className="flex items-center gap-2">
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Enter API key (stored locally)"
+                  className="flex-1 text-xs px-2 py-1 rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleApiKeySave();
+                    } else if (e.key === 'Escape') {
+                      setShowApiKeyInput(false);
+                    }
+                  }}
+                  autoFocus
+                />
+                <button
+                  onClick={handleApiKeySave}
+                  className="text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => {
+                    setShowApiKeyInput(false);
+                    setApiKey(getUserApiKey());
+                  }}
+                  className="text-xs px-2 py-1 rounded border border-slate-300 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1">
+                Key stored locally. Used for Cloud API fallback when Gemini Nano/Llama unavailable.
+              </p>
+            </div>
+          )}
 
           <div className="flex-1 p-3 space-y-2 overflow-auto">
             {messages.map((m, i) => (
