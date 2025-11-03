@@ -245,6 +245,19 @@ jobs:
           ./gradlew --version 2>&1 | head -20 || echo "⚠️ Gradle version check failed"
           echo "================================"
       
+      - name: Verify dependencies can be resolved
+        run: |
+          echo "=== VERIFYING DEPENDENCIES ==="
+          cd apps/web/android
+          echo "Attempting to resolve dependencies..."
+          ./gradlew dependencies --configuration debugRuntimeClasspath 2>&1 | head -50 || {
+            echo "⚠️ Dependency resolution had warnings, but continuing..."
+          }
+          echo "Checking ML Kit GenAI availability..."
+          ./gradlew dependencies --configuration debugRuntimeClasspath 2>&1 | grep -i "genai\|mlkit" || echo "⚠️ ML Kit dependency not found in dependency tree"
+          echo "================================="
+        continue-on-error: true
+      
       - name: Build Android APK
         run: |
           echo "=== BUILDING ANDROID APK ==="
@@ -252,15 +265,19 @@ jobs:
           chmod +x gradlew
           chmod +x gradlew.bat || true
           
+          echo "Cleaning previous builds..."
+          ./gradlew clean --no-daemon 2>&1 | tail -20 || echo "⚠️ Clean had warnings"
+          
           echo "Starting Gradle build..."
-          ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tee build.log || {
+          ./gradlew assembleDebug --no-daemon --stacktrace --warning-mode all 2>&1 | tee build.log || {
             echo "❌ Gradle build failed"
-            echo "=== BUILD ERROR LOG (last 200 lines) ==="
-            tail -200 build.log
+            echo "=== BUILD ERROR LOG (last 300 lines) ==="
+            tail -300 build.log
             echo "========================================"
             echo "=== SEARCHING FOR ERRORS ==="
-            grep -i "error" build.log | tail -30 || echo "No 'error' found in log"
-            grep -i "failed" build.log | tail -30 || echo "No 'failed' found in log"
+            grep -i "error" build.log | tail -50 || echo "No 'error' found in log"
+            grep -i "failed" build.log | tail -50 || echo "No 'failed' found in log"
+            grep -i "could not resolve\|cannot find\|dependency" build.log | tail -30 || echo "No dependency errors found"
             echo "============================"
             exit 1
           }
