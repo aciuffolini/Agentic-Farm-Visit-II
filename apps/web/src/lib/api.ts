@@ -42,17 +42,27 @@ export async function* streamChat(
   const userKey = getUserApiKey();
   if (userKey) {
     headers['X-API-Key'] = userKey;
-    console.log('[API] Using user-provided API key');
+    console.log('[API] Using user-provided API key:', userKey.substring(0, 10) + '...');
+  } else {
+    console.warn('[API] No API key found in localStorage');
   }
   
   // Optional: Add provider selection header (future)
   // if (provider) headers['X-Provider'] = provider;
 
-  const response = await fetch(`${API_BASE}/chat`, {
+  const url = `${API_BASE}/chat`;
+  console.log('[API] Request URL:', url);
+  console.log('[API] Request headers:', { ...headers, 'X-API-Key': headers['X-API-Key'] ? `${headers['X-API-Key'].substring(0, 10)}...` : 'NOT SET' });
+  console.log('[API] Request body:', { messages: messages.length, meta });
+
+  const response = await fetch(url, {
     method: 'POST',
     headers,
     body: JSON.stringify({ messages, meta }),
   });
+  
+  console.log('[API] Response status:', response.status, response.statusText);
+  console.log('[API] Response headers:', Object.fromEntries(response.headers.entries()));
 
   if (!response.ok) {
     const text = await response.text();
@@ -79,13 +89,23 @@ export async function* streamChat(
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6).trim();
-          if (data === '[DONE]') return;
+          if (data === '[DONE]') {
+            console.log('[API] Stream complete');
+            return;
+          }
           
           try {
-            const parsed: ChatResponse = JSON.parse(data);
-            yield parsed.token || data;
-          } catch {
-            yield data;
+            const parsed = JSON.parse(data);
+            // OpenAI SSE format: { choices: [{ delta: { content: "..." } }] }
+            const content = parsed.choices?.[0]?.delta?.content || parsed.token || '';
+            if (content) {
+              yield content;
+            }
+          } catch (e) {
+            // Not JSON, yield as-is (fallback)
+            if (data && data !== '') {
+              yield data;
+            }
           }
         }
       }

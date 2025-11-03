@@ -12,7 +12,9 @@ export function getUserApiKey(): string {
 export function setUserApiKey(key: string): void {
   if (typeof window === 'undefined') return;
   if (key) {
-    localStorage.setItem('user_api_key', key);
+    // Remove any quotes that user might have added
+    const cleanedKey = key.trim().replace(/^["']|["']$/g, '');
+    localStorage.setItem('user_api_key', cleanedKey);
   } else {
     localStorage.removeItem('user_api_key');
   }

@@ -21,17 +21,13 @@ export class GeminiNanoNativeWeb {
     status?: string;
     downloadable?: boolean;
   }> {
-    if (this.mockEnabled) {
-      return {
-        available: true,
-        reason: 'Mock mode enabled for development',
-        status: 'MOCK_AVAILABLE',
-        downloadable: false,
-      };
-    }
+    // Always return false on web - let Cloud API handle it
+    // Mock mode was causing issues - better to use real Cloud API
     return {
       available: false,
-      reason: 'Not on Android device',
+      reason: 'Not on Android device - use Cloud API on web',
+      status: 'NOT_AVAILABLE',
+      downloadable: false,
     };
   }
 
