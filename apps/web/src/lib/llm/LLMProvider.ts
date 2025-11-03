@@ -194,12 +194,17 @@ export class LLMProvider {
     
     if (selectedModel === 'gpt-4o-mini') {
       // Try Cloud API (requires online and API key)
+      console.log('[LLMProvider] GPT-4o mini selected, checking requirements...');
+      
       if (!navigator.onLine) {
+        console.warn('[LLMProvider] Device is offline');
         throw new Error('ChatGPT 4o mini requires internet connection');
       }
       
       const { getUserApiKey } = await import('../config/userKey');
       const hasKey = getUserApiKey();
+      
+      console.log('[LLMProvider] API key check:', hasKey ? 'Found' : 'Not found');
       
       if (!hasKey) {
         throw new Error('ChatGPT 4o mini requires API key. Please set it using the 🔑 button.');
@@ -210,6 +215,7 @@ export class LLMProvider {
         this.stats = { provider: 'cloud-api', model: 'gpt-4o-mini' };
         
         const systemPrompt = this.buildEnhancedSystemPrompt(input.visitContext);
+        console.log('[LLMProvider] Enhanced system prompt length:', systemPrompt.length);
         
         let userContent = input.text;
         if (input.location) {
@@ -227,6 +233,9 @@ export class LLMProvider {
           },
         ];
 
+        console.log('[LLMProvider] Messages prepared:', messages.length, 'messages');
+        console.log('[LLMProvider] System message preview:', systemPrompt.substring(0, 100) + '...');
+
         const meta = input.location
           ? {
               visit: {
@@ -239,10 +248,17 @@ export class LLMProvider {
             }
           : undefined;
 
+        console.log('[LLMProvider] Calling streamChat...');
         yield* streamChat(messages, meta);
+        console.log('[LLMProvider] streamChat completed successfully');
         return;
       } catch (err: any) {
         console.error('[LLMProvider] ChatGPT 4o mini failed:', err);
+        console.error('[LLMProvider] Error details:', {
+          message: err.message,
+          stack: err.stack,
+          name: err.name,
+        });
         throw new Error(`ChatGPT 4o mini error: ${err.message}`);
       }
     }
