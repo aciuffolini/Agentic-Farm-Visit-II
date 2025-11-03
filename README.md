@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.7-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Android-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -20,7 +20,7 @@
 
 ### 🎯 **One-Click Download**
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.7-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
 **Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 
@@ -373,35 +373,36 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Last Commit**: `536430b` - fix: improve Android build configuration for CI
+**Latest Version**: v1.0.8
 
-**Latest Version**: v1.0.7
+### ✨ What's New in v1.0.8
 
-### ✨ What's New
+- **🤖 Model Selection**: Choose your preferred AI model
+  - **Auto Mode**: Automatically uses best available model (offline-first)
+  - **Nano**: Gemini Nano for offline Android 14+ devices
+  - **ChatGPT 4o mini**: Cloud-based model (requires API key)
+  - **Llama Small**: Local offline model for any Android 7+ device
 
-- **Structured Visit Context**: Chatbot now receives full visit context
-  - **Current visit data**: GPS location, notes, photos, audio recordings
-  - **Latest saved visit**: Field ID, crop, issue, severity, photo/audio URLs
-  - **Context-aware responses**: Uses visit data for specific, relevant answers
+- **📝 Enhanced Prompt Engineering**: Improved context understanding
+  - **Structured visit data**: GPS coordinates with accuracy, notes, photos, audio recordings
+  - **Latest saved visit**: Complete record with field ID, crop, issue, severity
+  - **Photo and audio awareness**: AI acknowledges and references media in responses
+  - **Better context formatting**: Well-organized structured prompts for all models
 
-- **Offline-First Priority**: Fixed fallback order
-  - **Priority 1**: Gemini Nano (offline, Android 14+)
-  - **Priority 2**: Llama Local (offline, small model for Q&A)
-  - **Priority 3**: Cloud API (online, requires API key)
+- **🔄 Maintained Offline-First**: Online/offline interaction preserved
+  - Auto mode still prioritizes offline models (Nano → Llama → Cloud API)
+  - Explicit model selection allows forcing specific models when needed
+  - All models receive enhanced structured context
 
-- **API Key UI**: Improved visibility and auto-prompt
-  - Color-coded button (amber/green)
-  - Auto-prompt after 1 second
-  - Clear error messages
-
-- **Version**: **v1.0.7**
-  - Structured visit context in prompts
-  - Offline-first architecture
-  - Enhanced chatbot with visit data
+- **Version**: **v1.0.8**
+  - Model selection UI in chat drawer
+  - Enhanced prompt engineering with structured visit context
+  - Improved system prompts for all models
+  - Better photo and audio recording integration in prompts
 
 ### 📱 Download Latest APK
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.7-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
 **Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 

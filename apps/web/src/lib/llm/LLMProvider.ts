@@ -17,6 +17,7 @@ export interface LLMInput {
   text: string;
   location?: { lat: number; lon: number };
   images?: string[]; // For future vision support
+  model?: ModelOption; // User-selected model ('nano', 'gpt-4o-mini', 'llama-small', or 'auto' for fallback)
   visitContext?: {
     current?: {
       gps?: { lat: number; lon: number; accuracy?: number } | null;
@@ -36,9 +37,12 @@ export interface LLMInput {
   } | null;
 }
 
+export type ModelOption = 'nano' | 'gpt-4o-mini' | 'llama-small' | 'auto';
+
 export interface LLMProviderStats {
   provider: 'gemini-nano' | 'llama-local' | 'cloud-api' | 'none';
   fallbackReason?: string;
+  model?: ModelOption;
 }
 
 /**
@@ -48,10 +52,202 @@ export class LLMProvider {
   private stats: LLMProviderStats = { provider: 'none' };
 
   /**
-   * Stream text completion with automatic fallback
+   * Build enhanced system prompt with structured visit context
+   */
+  private buildEnhancedSystemPrompt(visitContext?: LLMInput['visitContext']): string {
+    let systemPrompt = `You are an expert agricultural field visit assistant. Your role is to help farmers and agricultural professionals with:
+
+**Core Responsibilities:**
+• Field visit data capture and organization
+• Crop identification and management advice
+• Pest and disease detection and treatment recommendations
+• Agricultural best practices and field management
+• GPS location-based agricultural insights
+• Photo and audio analysis from field visits
+
+**Communication Style:**
+• Be concise, practical, and provide actionable advice
+• Use the visit context provided (GPS location, notes, photos, audio recordings, saved visit records) to give specific, relevant responses
+• Respond in a friendly, professional manner suitable for field work
+• If context is available, reference it explicitly in your responses
+
+**Response Guidelines:**
+• When photos or audio are mentioned, acknowledge their presence and provide insights if possible
+• For location-based questions, use GPS coordinates to provide region-specific advice
+• Reference previous visit records when relevant for continuity`;
+
+    // Add structured visit context to system prompt if available
+    if (visitContext) {
+      let contextInfo = '\n\n**=== CURRENT VISIT CONTEXT ===**\n';
+      
+      if (visitContext.current) {
+        const ctx = visitContext.current;
+        if (ctx.gps) {
+          contextInfo += `\n📍 **GPS Location:**\n`;
+          contextInfo += `   - Latitude: ${ctx.gps.lat.toFixed(6)}\n`;
+          contextInfo += `   - Longitude: ${ctx.gps.lon.toFixed(6)}\n`;
+          contextInfo += `   - Accuracy: ${ctx.gps.accuracy?.toFixed(0) || 'N/A'} meters\n`;
+        }
+        if (ctx.note) {
+          contextInfo += `\n📝 **Current Note:**\n   "${ctx.note}"\n`;
+        }
+        if (ctx.photo) {
+          contextInfo += `\n📷 **Photo Available:** Yes (captured during this visit)\n`;
+          contextInfo += `   - Format: Base64 data URL\n`;
+          contextInfo += `   - Use this to help with visual analysis questions\n`;
+        }
+        if (ctx.audio) {
+          contextInfo += `\n🎤 **Audio Recording Available:** Yes (captured during this visit)\n`;
+          contextInfo += `   - Format: Base64 data URL\n`;
+          contextInfo += `   - Use this to help with voice note analysis\n`;
+        }
+        if (!ctx.gps && !ctx.note && !ctx.photo && !ctx.audio) {
+          contextInfo += `   (No current visit data captured yet)\n`;
+        }
+      }
+      
+      if (visitContext.latest) {
+        const latest = visitContext.latest;
+        contextInfo += '\n\n**=== LATEST SAVED VISIT RECORD ===**\n';
+        if (latest.id) contextInfo += `\n🆔 **Visit ID:** ${latest.id}\n`;
+        if (latest.field_id) contextInfo += `\n🌾 **Field ID:** ${latest.field_id}\n`;
+        if (latest.crop) contextInfo += `\n🌽 **Crop:** ${latest.crop}\n`;
+        if (latest.issue) contextInfo += `\n⚠️ **Issue Identified:** ${latest.issue}\n`;
+        if (latest.severity) contextInfo += `\n📊 **Severity:** ${latest.severity}/5\n`;
+        if (latest.photo_url) {
+          contextInfo += `\n📷 **Photo:** Available (saved in database)\n`;
+          contextInfo += `   - Reference this photo for visual analysis\n`;
+        }
+        if (latest.audio_url) {
+          contextInfo += `\n🎤 **Audio Recording:** Available (saved in database)\n`;
+          contextInfo += `   - Reference this audio for voice note analysis\n`;
+        }
+      }
+      
+      systemPrompt += contextInfo;
+    }
+
+    return systemPrompt;
+  }
+
+  /**
+   * Stream text completion with automatic fallback or explicit model selection
    * Priority: Offline-first (Nano/Llama) → Cloud API (online only)
+   * Or use explicit model selection if provided
    */
   async *stream(input: LLMInput): AsyncGenerator<string> {
+    const selectedModel = input.model || 'auto';
+    
+    // If explicit model selected, use it (with fallback if unavailable)
+    if (selectedModel === 'nano') {
+      // Try Gemini Nano first
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        if (Capacitor.isNativePlatform()) {
+          const available = await geminiNano.isAvailable();
+          if (available) {
+            console.log('[LLMProvider] Using Gemini Nano (User Selected)');
+            this.stats = { provider: 'gemini-nano', model: 'nano' };
+            
+            // Build enhanced prompt for Nano
+            const enhancedPrompt = this.buildEnhancedSystemPrompt(input.visitContext);
+            const fullPrompt = `${enhancedPrompt}\n\nUser: ${input.text}\n\nAssistant:`;
+            
+            yield* geminiNano.stream({
+              text: fullPrompt,
+              location: input.location,
+            });
+            return;
+          }
+        }
+        throw new Error('Gemini Nano not available (requires Android 14+ with AICore)');
+      } catch (err: any) {
+        console.warn('[LLMProvider] Gemini Nano failed:', err.message);
+        throw new Error(`Gemini Nano unavailable: ${err.message}`);
+      }
+    }
+    
+    if (selectedModel === 'llama-small') {
+      // Try Llama Local
+      try {
+        const available = await llamaLocal.checkAvailability();
+        if (available) {
+          console.log('[LLMProvider] Using Llama Local (User Selected)');
+          this.stats = { provider: 'llama-local', model: 'llama-small' };
+          
+          // Build enhanced prompt for Llama
+          const enhancedPrompt = this.buildEnhancedSystemPrompt(input.visitContext);
+          const fullPrompt = `${enhancedPrompt}\n\nUser: ${input.text}\n\nAssistant:`;
+          
+          yield* llamaLocal.stream({
+            text: fullPrompt,
+            location: input.location,
+          });
+          return;
+        }
+        throw new Error('Llama Local not available (model not installed)');
+      } catch (err: any) {
+        console.warn('[LLMProvider] Llama Local failed:', err.message);
+        throw new Error(`Llama Local unavailable: ${err.message}`);
+      }
+    }
+    
+    if (selectedModel === 'gpt-4o-mini') {
+      // Try Cloud API (requires online and API key)
+      if (!navigator.onLine) {
+        throw new Error('ChatGPT 4o mini requires internet connection');
+      }
+      
+      const { getUserApiKey } = await import('../config/userKey');
+      const hasKey = getUserApiKey();
+      
+      if (!hasKey) {
+        throw new Error('ChatGPT 4o mini requires API key. Please set it using the 🔑 button.');
+      }
+      
+      try {
+        console.log('[LLMProvider] Using ChatGPT 4o mini (User Selected)');
+        this.stats = { provider: 'cloud-api', model: 'gpt-4o-mini' };
+        
+        const systemPrompt = this.buildEnhancedSystemPrompt(input.visitContext);
+        
+        let userContent = input.text;
+        if (input.location) {
+          userContent += `\n\nLocation: ${input.location.lat.toFixed(6)}, ${input.location.lon.toFixed(6)}`;
+        }
+
+        const messages: ChatMessage[] = [
+          {
+            role: 'system',
+            content: systemPrompt,
+          },
+          {
+            role: 'user',
+            content: userContent,
+          },
+        ];
+
+        const meta = input.location
+          ? {
+              visit: {
+                gps: {
+                  lat: input.location.lat,
+                  lon: input.location.lon,
+                  acc: 0,
+                },
+              },
+            }
+          : undefined;
+
+        yield* streamChat(messages, meta);
+        return;
+      } catch (err: any) {
+        console.error('[LLMProvider] ChatGPT 4o mini failed:', err);
+        throw new Error(`ChatGPT 4o mini error: ${err.message}`);
+      }
+    }
+    
+    // Auto mode: Try fallback order (original behavior)
     // Priority 1: Try Gemini Nano (offline, best quality, multimodal)
     // Only on native Android
     try {
@@ -60,10 +256,14 @@ export class LLMProvider {
         const available = await geminiNano.isAvailable();
         if (available) {
           console.log('[LLMProvider] Using Gemini Nano (Priority 1 - Offline)');
-          this.stats = { provider: 'gemini-nano' };
+          this.stats = { provider: 'gemini-nano', model: 'auto' };
+          
+          // Build enhanced prompt
+          const enhancedPrompt = this.buildEnhancedSystemPrompt(input.visitContext);
+          const fullPrompt = `${enhancedPrompt}\n\nUser: ${input.text}\n\nAssistant:`;
           
           yield* geminiNano.stream({
-            text: input.text,
+            text: fullPrompt,
             location: input.location,
           });
           return;
@@ -79,10 +279,14 @@ export class LLMProvider {
       const available = await llamaLocal.checkAvailability();
       if (available) {
         console.log('[LLMProvider] Using Llama Local (Priority 2 - Offline Q&A)');
-        this.stats = { provider: 'llama-local' };
+        this.stats = { provider: 'llama-local', model: 'auto' };
+        
+        // Build enhanced prompt
+        const enhancedPrompt = this.buildEnhancedSystemPrompt(input.visitContext);
+        const fullPrompt = `${enhancedPrompt}\n\nUser: ${input.text}\n\nAssistant:`;
         
         yield* llamaLocal.stream({
-          text: input.text,
+          text: fullPrompt,
           location: input.location,
         });
         return;
@@ -115,53 +319,10 @@ export class LLMProvider {
         // User has API key - try Cloud API
         try {
           console.log('[LLMProvider] Using Cloud API (Priority 3 - Online Fallback)');
-          this.stats = { provider: 'cloud-api' };
+          this.stats = { provider: 'cloud-api', model: 'auto' };
           
-          // Build system prompt with structured visit context
-          let systemPrompt = `You are a helpful agricultural field visit assistant. You help farmers and agricultural professionals with:
-
-• Field visit data capture and organization
-• Crop identification and management advice
-• Pest and disease detection and treatment recommendations
-• Agricultural best practices and field management
-• GPS location-based agricultural insights
-
-Be concise, practical, and provide actionable advice. Use the visit context provided to give specific, relevant responses.
-
-Respond in a friendly, professional manner suitable for field work.`;
-
-          // Add structured visit context to system prompt if available
-          if (input.visitContext) {
-            const ctx = input.visitContext;
-            let contextInfo = '\n\n**Current Visit Context:**\n';
-            
-            if (ctx.current) {
-              if (ctx.current.gps) {
-                contextInfo += `- Location: ${ctx.current.gps.lat.toFixed(6)}, ${ctx.current.gps.lon.toFixed(6)} (accuracy: ${ctx.current.gps.accuracy}m)\n`;
-              }
-              if (ctx.current.note) {
-                contextInfo += `- Note: ${ctx.current.note}\n`;
-              }
-              if (ctx.current.photo) {
-                contextInfo += `- Photo: Available (data URL)\n`;
-              }
-              if (ctx.current.audio) {
-                contextInfo += `- Audio Recording: Available (data URL)\n`;
-              }
-            }
-            
-            if (ctx.latest) {
-              contextInfo += '\n**Latest Saved Visit:**\n';
-              if (ctx.latest.field_id) contextInfo += `- Field ID: ${ctx.latest.field_id}\n`;
-              if (ctx.latest.crop) contextInfo += `- Crop: ${ctx.latest.crop}\n`;
-              if (ctx.latest.issue) contextInfo += `- Issue: ${ctx.latest.issue}\n`;
-              if (ctx.latest.severity) contextInfo += `- Severity: ${ctx.latest.severity}/5\n`;
-              if (ctx.latest.photo_url) contextInfo += `- Photo: Available (saved in database)\n`;
-              if (ctx.latest.audio_url) contextInfo += `- Audio: Available (saved in database)\n`;
-            }
-            
-            systemPrompt += contextInfo;
-          }
+          // Use enhanced system prompt
+          const systemPrompt = this.buildEnhancedSystemPrompt(input.visitContext);
 
           // Build user message with location if available
           let userContent = input.text;

@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatMessage } from '@farm-visit/shared';
-import { llmProvider } from '../lib/llm/LLMProvider';
+import { llmProvider, ModelOption } from '../lib/llm/LLMProvider';
 import { getUserApiKey, setUserApiKey } from '../lib/config/userKey';
 
 interface ChatDrawerProps {
@@ -22,6 +22,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   const [busy, setBusy] = useState(false);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKey, setApiKey] = useState(getUserApiKey());
+  const [selectedModel, setSelectedModel] = useState<ModelOption>('auto');
   
   // Initial message with API key prompt if needed
   const initialMessage = useMemo(() => {
@@ -113,14 +114,16 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         } : null,
       } : null;
       
-      // Use unified LLM Provider with automatic fallback
+      // Use unified LLM Provider with automatic fallback or explicit model selection
       // Priority: Gemini Nano (offline) → Llama Local (offline) → Cloud API (online)
+      // Or use selected model if user chose one
       let hasResponse = false;
       const generator = llmProvider.stream({
         text: userInput,
         location: visitContext?.gps 
           ? { lat: visitContext.gps.lat, lon: visitContext.gps.lon }
           : undefined,
+        model: selectedModel, // Pass selected model (or 'auto' for fallback)
         visitContext: structuredVisit, // Pass structured visit data
       });
 
@@ -234,6 +237,18 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
           <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200 bg-slate-50">
             <div className="font-semibold">AI Assistant</div>
             <div className="flex items-center gap-2">
+              {/* Model Selection */}
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value as ModelOption)}
+                className="text-xs font-medium px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                title="Select AI model"
+              >
+                <option value="auto">🤖 Auto (Best Available)</option>
+                <option value="nano">📱 Nano (Offline)</option>
+                <option value="gpt-4o-mini">☁️ ChatGPT 4o mini</option>
+                <option value="llama-small">🦙 Llama Small (Offline)</option>
+              </select>
               <button 
                 onClick={() => setShowApiKeyInput(!showApiKeyInput)}
                 className={`text-sm font-medium px-3 py-1.5 rounded-lg border transition ${
