@@ -373,25 +373,25 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Last Commit**: `abafeff` - feat: add Cloud API fallback with user API key support (2025-11-03)
+**Last Commit**: `733cbb5` - feat: add API key UI and bump version to 1.0.7 (2025-11-03)
 
 **Latest Version**: v1.0.7
 
 ### ✨ What's New
 
-- **Cloud API Fallback Ready**: Tertiary solution for testing
-  - User API key management (stored locally, per-device)
-  - Automatic fallback: Gemini Nano → Llama → **Cloud API**
-  - Ready for testing before quantized Llama implementation
+- **API Key UI**: Added 🔑 button in chat header to easily set API key
+  - Click 🔑 button to open API key input field
+  - API key stored locally (per-device, secure)
+  - No need to use console - user-friendly UI
 
-- **User API Key Support**: 
-  - Store API keys locally (no server secrets needed)
-  - Set via `window.setAPIKey('sk-...')` on device
+- **Cloud API Fallback**: Ready for testing tertiary solution
+  - Automatic fallback: Gemini Nano → Llama → **Cloud API**
+  - User API key management integrated
   - Sent as `X-API-Key` header to backend
 
-- **Testing Documentation**: 
-  - `TEST_CLOUD_API_FALLBACK.md` - Testing guide
-  - `CLOUD_API_TESTING_SETUP.md` - Server setup instructions
+- **Version Update**: v1.0.6 → **v1.0.7**
+  - Improved user experience for API key configuration
+  - Better error messages
 
 ### 📱 Download Latest APK
 
