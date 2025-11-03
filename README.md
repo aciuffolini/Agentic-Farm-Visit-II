@@ -20,9 +20,9 @@
 
 ### 🎯 **One-Click Download**
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix)
 
-**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
+**Or visit**: [Latest Release (v1.0.8-fix)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
 
 </div>
 
@@ -403,9 +403,9 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 
 ### 📱 Download Latest APK
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix)
 
-**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
+**Or visit**: [Latest Release (v1.0.8-fix)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
 
 </details>
 
