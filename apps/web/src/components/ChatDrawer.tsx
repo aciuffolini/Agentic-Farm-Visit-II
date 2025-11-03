@@ -1,12 +1,15 @@
 /**
  * Chat Drawer Component
- * Simplified - uses only Gemini Nano for now
+ * Uses unified LLM Provider with automatic fallback:
+ * 1. Gemini Nano (Android 14+ with AICore)
+ * 2. Llama Local (Android 7+, offline fallback)
+ * 3. Cloud API (optional, user-provided key)
  */
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatMessage } from '@farm-visit/shared';
-import { geminiNano } from '../lib/llm/GeminiNano';
+import { llmProvider } from '../lib/llm/LLMProvider';
 
 interface ChatDrawerProps {
   open: boolean;
@@ -36,18 +39,23 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     try {
       console.log('[ChatDrawer] Sending message:', userInput);
       
-      // Use Gemini Nano only (will be tuned in future)
+      // Get visit context for location awareness
       const visitContext = (window as any).__VISIT_CONTEXT__;
       console.log('[ChatDrawer] Visit context:', visitContext);
       
-      // Stream response from Gemini Nano
+      // Use unified LLM Provider with automatic fallback
+      // Priority: Gemini Nano → Llama Local → Cloud API
       let hasResponse = false;
-      const generator = geminiNano.stream({
+      const generator = llmProvider.stream({
         text: userInput,
         location: visitContext?.gps 
           ? { lat: visitContext.gps.lat, lon: visitContext.gps.lon }
           : undefined,
       });
+
+      // Show which provider is being used
+      const stats = llmProvider.getStats();
+      console.log('[ChatDrawer] Using provider:', stats.provider);
 
       for await (const chunk of generator) {
         hasResponse = true;
@@ -62,17 +70,25 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         });
       }
 
-      // If no response was generated, show a fallback
+      // If no response was generated, show a helpful fallback message
       if (!hasResponse) {
-        console.warn('[ChatDrawer] No response generated from Gemini Nano');
+        console.warn('[ChatDrawer] No response generated from LLM provider');
+        const stats = llmProvider.getStats();
+        let fallbackMessage = "I'm here! How can I help you with your field visit?\n\n";
+        
+        if (stats.provider === 'none') {
+          fallbackMessage += "Note: AI model is initializing. This may take a moment on first use.\n\n";
+          fallbackMessage += "Available options:\n";
+          fallbackMessage += "• Android 14+ with AICore → Gemini Nano\n";
+          fallbackMessage += "• Any Android 7+ → Llama Local (download model)\n";
+          fallbackMessage += "• Online → Cloud API (with API key)";
+        }
+
         setMessages((m) => {
           const copy = [...m];
           const last = copy[copy.length - 1];
           if (last && last.role === 'assistant') {
-            copy[copy.length - 1] = { 
-              ...last, 
-              content: "I'm here! How can I help you with your field visit? Try asking about crops, pests, or diseases.\n\n(Note: If this is the first use, Gemini Nano may need to download the model. This requires Android 14+ and a compatible device.)"
-            };
+            copy[copy.length - 1] = { ...last, content: fallbackMessage };
           }
           return copy;
         });
@@ -80,16 +96,24 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     } catch (err: any) {
       console.error('[ChatDrawer] Error:', err);
       
-      // Provide helpful error messages
+      // Provide helpful error messages based on provider failures
       let errorMessage = 'Sorry, I encountered an error. ';
-      if (err.message?.includes('not available')) {
-        errorMessage += 'Gemini Nano requires Android 14+ with AICore support. Please check your device compatibility.';
+      const stats = llmProvider.getStats();
+      
+      if (err.message?.includes('not available') || err.message?.includes('No LLM provider available')) {
+        errorMessage += '\n\nAvailable options:\n';
+        errorMessage += '• Android 14+ with AICore → Gemini Nano\n';
+        errorMessage += '• Any Android 7+ → Llama Local (requires model download)\n';
+        errorMessage += '• Online → Cloud API (requires API key configuration)';
       } else if (err.message?.includes('not initialized')) {
         errorMessage += 'The AI model is still initializing. Please try again in a moment.';
       } else if (err.message?.includes('timeout')) {
         errorMessage += 'The request timed out. Please check your connection and try again.';
       } else {
         errorMessage += err.message || 'Unknown error. Please try again.';
+        if (stats.fallbackReason) {
+          errorMessage += `\n\nDebug: ${stats.fallbackReason}`;
+        }
       }
       
       setMessages((m) => {
@@ -119,7 +143,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
           className="fixed right-0 top-0 z-40 h-full w-[min(500px,95vw)] border-l border-slate-200 bg-white shadow-xl flex flex-col"
         >
           <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200">
-            <div className="font-semibold">AI Assistant (Gemini Nano)</div>
+            <div className="font-semibold">AI Assistant</div>
             <button onClick={onClose} className="text-slate-500 text-sm">
               Close
             </button>
