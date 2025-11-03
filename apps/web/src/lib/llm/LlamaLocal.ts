@@ -106,8 +106,18 @@ export class LlamaLocal {
       throw new Error('Text input required');
     }
 
-    // Build prompt with context
-    let prompt = this.buildPrompt(input);
+    // Check if input already contains a formatted prompt (from enhanced LLMProvider)
+    // If it contains "User:" and "Assistant:" markers, use it directly
+    // Otherwise, build prompt with context
+    let prompt: string;
+    if (input.text.includes('User:') && input.text.includes('Assistant:')) {
+      // Enhanced prompt already formatted, use as-is
+      prompt = input.text;
+      console.log('[LlamaLocal] Using enhanced prompt from LLMProvider');
+    } else {
+      // Build prompt with context (legacy behavior)
+      prompt = this.buildPrompt(input);
+    }
 
     try {
       // Set up listener for stream chunks (similar to GeminiNano)
