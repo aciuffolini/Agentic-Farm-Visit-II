@@ -34,3 +34,4 @@ export function useCamera() {
   return { photo, loading, capturePhoto, clearPhoto };
 }
 
+

@@ -113,3 +113,4 @@ Una vez que tengas JDK 17 instalado:
 3. Si compila bien → transferir APK al teléfono
 4. Probar en dispositivo Android 14+
 
+

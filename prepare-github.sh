@@ -75,3 +75,4 @@ echo "6. git push -u origin main"
 echo ""
 echo "📚 See GITHUB_SETUP.md for detailed instructions"
 
+

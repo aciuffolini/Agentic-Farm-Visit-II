@@ -137,3 +137,4 @@ The client is **fully functional** for offline use. You can:
 
 Ready to test? Run `npm install` and `npm run dev`! 🚀
 
+

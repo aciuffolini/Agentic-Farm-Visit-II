@@ -132,3 +132,4 @@ git push origin v1.0.0
 
 **Recomendación**: Instala Java localmente (5 min) para compilar ahora. GitHub Actions es útil para el futuro. 🚀
 
+

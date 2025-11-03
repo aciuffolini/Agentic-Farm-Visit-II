@@ -120,3 +120,4 @@ npx vite
 
 Esto debería funcionar incluso si el script falla.
 
+

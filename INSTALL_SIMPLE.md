@@ -82,3 +82,4 @@ npx vite
 
 **Prueba con `npm install --legacy-peer-deps` y debería funcionar!** 🚀
 
+

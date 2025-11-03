@@ -156,3 +156,4 @@ Your MVP client is now running! Test all the offline features - they work withou
 
 The only thing missing is the backend server (for chat and sync), but you can use the app fully offline! 🎉
 
+

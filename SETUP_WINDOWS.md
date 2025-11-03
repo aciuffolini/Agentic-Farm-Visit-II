@@ -135,3 +135,4 @@ npm list --depth=0
 
 **Recomendación**: Usa **Command Prompt (CMD)** en lugar de PowerShell para evitar problemas de execution policy.
 
+

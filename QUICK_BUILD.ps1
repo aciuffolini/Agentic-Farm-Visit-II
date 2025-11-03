@@ -72,3 +72,4 @@ Write-Host "   2. Instalar APK" -ForegroundColor White
 Write-Host "   3. Primera vez: App descargará modelo Gemini Nano (~2GB)" -ForegroundColor White
 Write-Host "   4. Probar chat escribiendo 'help'" -ForegroundColor White
 
+

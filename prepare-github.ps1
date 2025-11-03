@@ -78,3 +78,4 @@ Write-Host "6. git push -u origin main"
 Write-Host ""
 Write-Host "📚 See GITHUB_SETUP.md for detailed instructions" -ForegroundColor Blue
 
+

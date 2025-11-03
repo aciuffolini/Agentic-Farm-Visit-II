@@ -71,3 +71,4 @@ El único componente que falta es el servidor backend para chat y sincronizació
 
 **¡Abre http://localhost:5173 y prueba la app!** 🚀
 
+

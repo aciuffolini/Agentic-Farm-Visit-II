@@ -107,3 +107,4 @@ Para probar rápido en Android **ahora mismo**:
 2. Los usuarios lo instalan directamente
 3. Más adelante, subes a GitHub Releases para distribución profesional
 
+

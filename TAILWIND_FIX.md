@@ -50,3 +50,4 @@ Si el error persiste:
 
 **El servidor debería funcionar ahora sin errores de Tailwind.** ✅
 
+

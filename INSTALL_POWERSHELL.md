@@ -69,3 +69,4 @@ npx vite
 
 **Versiones actualizadas a Capacitor 6.x para compatibilidad total.** ✅
 
+

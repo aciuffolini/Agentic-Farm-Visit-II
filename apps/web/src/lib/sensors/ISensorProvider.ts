@@ -57,3 +57,4 @@ export interface ISensorProvider {
   checkPermissions(): Promise<PermissionStatus>;
 }
 
+

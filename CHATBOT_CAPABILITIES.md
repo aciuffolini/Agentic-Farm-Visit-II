@@ -228,3 +228,4 @@ I can see you're at -34.6037, -58.3816."
 
 **The chatbot is your intelligent field assistant, ready to help with agricultural data capture, analysis, and recommendations!** 🌾
 
+

@@ -266,3 +266,4 @@ Before committing to GitHub:
 
 **Remember**: Public repo doesn't mean public access. Protect your API with authentication! 🔒
 
+

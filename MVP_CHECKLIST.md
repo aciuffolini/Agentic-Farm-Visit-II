@@ -151,3 +151,4 @@ npm run dev
 
 **Status**: Client MVP is ~90% complete! Just need Tailwind config and test it. 🚀
 
+

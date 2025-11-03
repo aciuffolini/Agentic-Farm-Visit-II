@@ -131,3 +131,4 @@ Verifica que la PWA esté correctamente configurada:
 
 **¿Prefieres que exponga el servidor en la red local o desplegar a un servicio público?** 🌐
 
+

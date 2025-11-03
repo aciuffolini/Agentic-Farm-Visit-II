@@ -102,3 +102,4 @@ This will get the basic app running without Capacitor plugins.
 
 **Fixed versions are in package.json now. Just run `npm install` again!** ✅
 
+

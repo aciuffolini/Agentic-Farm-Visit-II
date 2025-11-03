@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Chat Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007acc; color: white; border: none; cursor: pointer; }
+        button:hover { background: #005a9e; }
+        #result { margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px; white-space: pre-wrap; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Simple Chat Test</h1>
+    
+    <h2>Step 1: Check API Key</h2>
+    <button onclick="checkKey()">Check API Key</button>
+    <div id="key-result"></div>
+    
+    <h2>Step 2: Test Chat</h2>
+    <button onclick="testChat()">Test Chat Endpoint</button>
+    <div id="chat-result"></div>
+    
+    <h2>Step 3: Results</h2>
+    <div id="result"></div>
+
+    <script>
+        function checkKey() {
+            const key = localStorage.getItem('user_api_key');
+            const result = document.getElementById('key-result');
+            if (key) {
+                result.innerHTML = `<span class="success">✅ API Key found: ${key.substring(0, 15)}...</span>`;
+            } else {
+                result.innerHTML = `<span class="error">❌ No API key found. Set it in chat drawer first.</span>`;
+            }
+        }
+
+        async function testChat() {
+            const resultDiv = document.getElementById('result');
+            const chatResult = document.getElementById('chat-result');
+            resultDiv.innerHTML = 'Testing...\n';
+            
+            const apiKey = localStorage.getItem('user_api_key');
+            if (!apiKey) {
+                resultDiv.innerHTML = '<span class="error">❌ No API key found. Set it first!</span>';
+                return;
+            }
+            
+            try {
+                resultDiv.innerHTML += `📡 Sending request to /api/chat...\n`;
+                resultDiv.innerHTML += `🔑 Using API key: ${apiKey.substring(0, 15)}...\n\n`;
+                
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey,
+                    },
+                    body: JSON.stringify({
+                        messages: [{ role: 'user', content: 'Hello, this is a test message' }],
+                    }),
+                });
+                
+                resultDiv.innerHTML += `📊 Status: ${response.status} ${response.statusText}\n`;
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML += `<span class="error">❌ Error: ${text}</span>`;
+                    return;
+                }
+                
+                resultDiv.innerHTML += `<span class="success">✅ Response OK! Streaming...</span>\n\n`;
+                
+                if (!response.body) {
+                    resultDiv.innerHTML += `<span class="error">❌ No response body</span>`;
+                    return;
+                }
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let chunkCount = 0;
+                let fullText = '';
+                
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                        resultDiv.innerHTML += `\n<span class="success">✅ Stream complete! Received ${chunkCount} chunks</span>\n`;
+                        resultDiv.innerHTML += `📝 Total length: ${fullText.length} characters\n`;
+                        break;
+                    }
+                    
+                    chunkCount++;
+                    const text = decoder.decode(value);
+                    fullText += text;
+                    
+                    if (chunkCount === 1) {
+                        resultDiv.innerHTML += `📦 First chunk: ${text.substring(0, 200)}...\n`;
+                    }
+                }
+                
+                chatResult.innerHTML = '<span class="success">✅ Chat test successful!</span>';
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<span class="error">❌ Error: ${error.message}</span>\n`;
+                resultDiv.innerHTML += `\nPossible issues:\n`;
+                resultDiv.innerHTML += `1. Test server not running (node test-server.js)\n`;
+                resultDiv.innerHTML += `2. Wrong API key\n`;
+                resultDiv.innerHTML += `3. Network error\n`;
+                chatResult.innerHTML = '<span class="error">❌ Chat test failed</span>';
+            }
+        }
+    </script>
+</body>
+</html>
+

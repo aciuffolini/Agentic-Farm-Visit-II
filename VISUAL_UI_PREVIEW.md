@@ -171,3 +171,4 @@ Panel lateral desde derecha:
 
 **Para ver el diseño real: Abre http://localhost:5173 y activa el modo móvil en DevTools!** 📱
 
+

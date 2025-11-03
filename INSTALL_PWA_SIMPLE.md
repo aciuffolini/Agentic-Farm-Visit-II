@@ -73,3 +73,4 @@ Cuando quieras deployar:
 
 **La PWA está lista! Solo necesitas exponer el servidor en la red local.** 📱✨
 
+

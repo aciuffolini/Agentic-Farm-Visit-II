@@ -119,3 +119,4 @@ Una vez instalado, puedes:
 
 **Nota**: Después de instalar JDK 17, **cierra y abre nuevamente** todas las terminales/IDEs para que tomen los cambios.
 
+
