@@ -17,6 +17,23 @@ export interface LLMInput {
   text: string;
   location?: { lat: number; lon: number };
   images?: string[]; // For future vision support
+  visitContext?: {
+    current?: {
+      gps?: { lat: number; lon: number; accuracy?: number } | null;
+      note?: string | null;
+      photo?: string | null;
+      audio?: string | null;
+    };
+    latest?: {
+      id?: string;
+      field_id?: string;
+      crop?: string;
+      issue?: string;
+      severity?: number;
+      photo_url?: string;
+      audio_url?: string;
+    } | null;
+  } | null;
 }
 
 export interface LLMProviderStats {
@@ -32,16 +49,17 @@ export class LLMProvider {
 
   /**
    * Stream text completion with automatic fallback
+   * Priority: Offline-first (Nano/Llama) → Cloud API (online only)
    */
   async *stream(input: LLMInput): AsyncGenerator<string> {
-    // Priority 1: Try Gemini Nano (best quality, multimodal)
-    // SKIP on web - only use on native Android
+    // Priority 1: Try Gemini Nano (offline, best quality, multimodal)
+    // Only on native Android
     try {
       const { Capacitor } = await import('@capacitor/core');
       if (Capacitor.isNativePlatform()) {
         const available = await geminiNano.isAvailable();
         if (available) {
-          console.log('[LLMProvider] Using Gemini Nano (Priority 1)');
+          console.log('[LLMProvider] Using Gemini Nano (Priority 1 - Offline)');
           this.stats = { provider: 'gemini-nano' };
           
           yield* geminiNano.stream({
@@ -50,20 +68,17 @@ export class LLMProvider {
           });
           return;
         }
-      } else {
-        // On web, skip Gemini Nano (mock mode) and go straight to Cloud API
-        console.log('[LLMProvider] Skipping Gemini Nano on web (not native platform)');
       }
     } catch (err: any) {
       console.warn('[LLMProvider] Gemini Nano failed, trying fallback:', err.message);
       this.stats.fallbackReason = `Gemini Nano: ${err.message}`;
     }
 
-    // Priority 2: Try Llama Local (offline fallback)
+    // Priority 2: Try Llama Local (offline fallback, small model for Q&A)
     try {
       const available = await llamaLocal.checkAvailability();
       if (available) {
-        console.log('[LLMProvider] Using Llama Local (Priority 2 - Offline Fallback)');
+        console.log('[LLMProvider] Using Llama Local (Priority 2 - Offline Q&A)');
         this.stats = { provider: 'llama-local' };
         
         yield* llamaLocal.stream({
@@ -79,7 +94,7 @@ export class LLMProvider {
         : `Llama Local: ${err.message}`;
     }
 
-    // Priority 3: Cloud API (only if online AND has API key or server has default)
+    // Priority 3: Cloud API (only if online AND has API key)
     if (navigator.onLine) {
       // Check if API key is available first
       const { getUserApiKey } = await import('../config/userKey');
@@ -102,11 +117,8 @@ export class LLMProvider {
           console.log('[LLMProvider] Using Cloud API (Priority 3 - Online Fallback)');
           this.stats = { provider: 'cloud-api' };
           
-          // Build messages with system prompt for farm visit context
-          const messages: ChatMessage[] = [
-            {
-              role: 'system',
-              content: `You are a helpful agricultural field visit assistant. You help farmers and agricultural professionals with:
+          // Build system prompt with structured visit context
+          let systemPrompt = `You are a helpful agricultural field visit assistant. You help farmers and agricultural professionals with:
 
 • Field visit data capture and organization
 • Crop identification and management advice
@@ -114,15 +126,57 @@ export class LLMProvider {
 • Agricultural best practices and field management
 • GPS location-based agricultural insights
 
-Be concise, practical, and provide actionable advice. When relevant, use the user's location context if provided. Focus on field visit workflows and agricultural knowledge.
+Be concise, practical, and provide actionable advice. Use the visit context provided to give specific, relevant responses.
 
-Respond in a friendly, professional manner suitable for field work.`,
+Respond in a friendly, professional manner suitable for field work.`;
+
+          // Add structured visit context to system prompt if available
+          if (input.visitContext) {
+            const ctx = input.visitContext;
+            let contextInfo = '\n\n**Current Visit Context:**\n';
+            
+            if (ctx.current) {
+              if (ctx.current.gps) {
+                contextInfo += `- Location: ${ctx.current.gps.lat.toFixed(6)}, ${ctx.current.gps.lon.toFixed(6)} (accuracy: ${ctx.current.gps.accuracy}m)\n`;
+              }
+              if (ctx.current.note) {
+                contextInfo += `- Note: ${ctx.current.note}\n`;
+              }
+              if (ctx.current.photo) {
+                contextInfo += `- Photo: Available (data URL)\n`;
+              }
+              if (ctx.current.audio) {
+                contextInfo += `- Audio Recording: Available (data URL)\n`;
+              }
+            }
+            
+            if (ctx.latest) {
+              contextInfo += '\n**Latest Saved Visit:**\n';
+              if (ctx.latest.field_id) contextInfo += `- Field ID: ${ctx.latest.field_id}\n`;
+              if (ctx.latest.crop) contextInfo += `- Crop: ${ctx.latest.crop}\n`;
+              if (ctx.latest.issue) contextInfo += `- Issue: ${ctx.latest.issue}\n`;
+              if (ctx.latest.severity) contextInfo += `- Severity: ${ctx.latest.severity}/5\n`;
+              if (ctx.latest.photo_url) contextInfo += `- Photo: Available (saved in database)\n`;
+              if (ctx.latest.audio_url) contextInfo += `- Audio: Available (saved in database)\n`;
+            }
+            
+            systemPrompt += contextInfo;
+          }
+
+          // Build user message with location if available
+          let userContent = input.text;
+          if (input.location) {
+            userContent += `\n\nLocation: ${input.location.lat.toFixed(6)}, ${input.location.lon.toFixed(6)}`;
+          }
+
+          const messages: ChatMessage[] = [
+            {
+              role: 'system',
+              content: systemPrompt,
             },
             {
               role: 'user',
-              content: input.location
-                ? `${input.text}\n\nLocation: ${input.location.lat.toFixed(6)}, ${input.location.lon.toFixed(6)}`
-                : input.text,
+              content: userContent,
             },
           ];
 

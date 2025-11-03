@@ -86,18 +86,42 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     try {
       console.log('[ChatDrawer] Sending message:', userInput);
       
-      // Get visit context for location awareness
+      // Get structured visit context
       const visitContext = (window as any).__VISIT_CONTEXT__;
       console.log('[ChatDrawer] Visit context:', visitContext);
       
+      // Build structured visit data for prompt context
+      const structuredVisit = visitContext ? {
+        current: {
+          gps: visitContext.gps ? {
+            lat: visitContext.gps.lat,
+            lon: visitContext.gps.lon,
+            accuracy: visitContext.gps.acc,
+          } : null,
+          note: visitContext.note || null,
+          photo: visitContext.photo?.url || null,
+          audio: visitContext.audio?.url || null,
+        },
+        latest: visitContext.latestVisit ? {
+          id: visitContext.latestVisit.id,
+          field_id: visitContext.latestVisit.field_id,
+          crop: visitContext.latestVisit.crop,
+          issue: visitContext.latestVisit.issue,
+          severity: visitContext.latestVisit.severity,
+          photo_url: visitContext.latestVisit.photo_url,
+          audio_url: visitContext.latestVisit.audio_url,
+        } : null,
+      } : null;
+      
       // Use unified LLM Provider with automatic fallback
-      // Priority: Gemini Nano → Llama Local → Cloud API
+      // Priority: Gemini Nano (offline) → Llama Local (offline) → Cloud API (online)
       let hasResponse = false;
       const generator = llmProvider.stream({
         text: userInput,
         location: visitContext?.gps 
           ? { lat: visitContext.gps.lat, lon: visitContext.gps.lon }
           : undefined,
+        visitContext: structuredVisit, // Pass structured visit data
       });
 
       // Show which provider is being used

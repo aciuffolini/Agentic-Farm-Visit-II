@@ -123,7 +123,7 @@ const server = http.createServer(async (req, res) => {
 
         // Call OpenAI
         try {
-          // Add system prompt for farm visit context
+          // Add system prompt for farm visit context (will be enhanced with visit data if provided)
           const systemMessage = {
             role: 'system',
             content: `You are a helpful agricultural field visit assistant. You help farmers and agricultural professionals with:
@@ -134,7 +134,7 @@ const server = http.createServer(async (req, res) => {
 • Agricultural best practices and field management
 • GPS location-based agricultural insights
 
-Be concise, practical, and provide actionable advice. When relevant, use the user's location context if provided. Focus on field visit workflows and agricultural knowledge.
+Be concise, practical, and provide actionable advice. Use the visit context provided (GPS location, notes, photos, audio recordings, saved visit records) to give specific, relevant responses.
 
 Respond in a friendly, professional manner suitable for field work.`
           };

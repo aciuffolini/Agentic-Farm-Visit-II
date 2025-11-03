@@ -37,19 +37,43 @@ export function FieldVisit() {
     };
   }, []);
 
-  // Expose context for AI chat and agents
+  // Expose structured visit context for AI chat and agents
   useEffect(() => {
-    const context = {
-      gps,
-      lastNote: note || null,
-      hasPhoto: !!photo,
+    // Build structured visit context with all available data
+    const visitContext = {
+      gps: gps ? {
+        lat: gps.lat,
+        lon: gps.lon,
+        acc: gps.acc,
+        ts: gps.ts,
+      } : null,
+      note: note || null,
+      photo: photo ? {
+        present: true,
+        url: photo, // dataURL for local access
+      } : null,
+      audio: audioUrl ? {
+        present: true,
+        url: audioUrl, // dataURL for local access
+      } : null,
+      // Include latest saved visit record if available
+      latestVisit: records.length > 0 ? {
+        id: records[0].id,
+        field_id: records[0].field_id,
+        crop: records[0].crop,
+        issue: records[0].issue,
+        severity: records[0].severity,
+        ts: records[0].ts,
+        photo_url: records[0].photo_data ? `data:image/jpeg;base64,${records[0].photo_data.split(',')[1]}` : undefined,
+        audio_url: records[0].audio_data || undefined,
+      } : null,
       ts: Date.now(),
     };
-    (window as any).__VISIT_CONTEXT__ = context;
+    (window as any).__VISIT_CONTEXT__ = visitContext;
     
     // Broadcast context update to swarm
-    agentMessaging.broadcast("visit_context_updated", context);
-  }, [gps, note, photo]);
+    agentMessaging.broadcast("visit_context_updated", visitContext);
+  }, [gps, note, photo, audioUrl, records]);
 
   // Load records on mount
   useEffect(() => {
