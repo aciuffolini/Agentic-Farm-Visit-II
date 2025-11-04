@@ -20,12 +20,12 @@
 
 ### 🎯 **One-Click Download**
 
-[![Download APK](https://img.shields.io/badge/Download-APK_Latest-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/download/v1.0.8-fix/app-debug.apk)
 
-**Direct Download**: [app-debug.apk](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)  
-**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
+**Direct Download**: [app-debug.apk (v1.0.8-fix)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/download/v1.0.8-fix/app-debug.apk)  
+**Fallback**: [v1.0.5 (Working)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/download/v1.0.5/app-debug.apk) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
 
-> **📦 To Install**: Click the green button above - it will automatically download the APK from the latest release. Then enable "Install from Unknown Sources" in your Android settings before installing.
+> **📦 To Install**: Click the green button above to download v1.0.8-fix APK. If it shows 404, use the v1.0.5 fallback link. Then enable "Install from Unknown Sources" in your Android settings before installing.
 
 </div>
 
@@ -421,13 +421,14 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 
 ### 📱 Download Latest APK
 
-[![Download APK](https://img.shields.io/badge/Download-APK_Latest-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/download/v1.0.8-fix/app-debug.apk)
 
-**Direct Download**: [app-debug.apk](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+**Direct Download**: [app-debug.apk (v1.0.8-fix)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/download/v1.0.8-fix/app-debug.apk)  
+**Fallback**: [v1.0.5 (Working)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/download/v1.0.5/app-debug.apk)
 
-**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
+**Or visit**: [v1.0.8-fix Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/tag/v1.0.8-fix) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
 
-> **📝 Note**: The button automatically downloads the APK from the latest release (same as v1.0.5). Just click and install!
+> **📝 Note**: Button downloads v1.0.8-fix. If 404 error, the APK hasn't been uploaded yet - use v1.0.5 fallback link until v1.0.8-fix APK is uploaded.
 
 </details>
 
