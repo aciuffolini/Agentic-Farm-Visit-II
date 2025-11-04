@@ -20,23 +20,21 @@
 
 ### 🎯 **One-Click Download**
 
-[![Download APK](https://img.shields.io/badge/Download-APK_Latest-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
+[![Download APK](https://img.shields.io/badge/Download-APK_Latest-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
-**Visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
+**Direct Download**: [app-debug.apk](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)  
+**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
 
-> **📦 To Install**: Click the green button above to go to Releases page. Find the latest release with an APK file in the "Assets" section, download it, then enable "Install from Unknown Sources" in your Android settings before installing.
+> **📦 To Install**: Click the green button above - it will automatically download the APK from the latest release. Then enable "Install from Unknown Sources" in your Android settings before installing.
 
 </div>
 
 ### 📋 Installation Steps
 
 1. **Download APK**:
-   - Click the green button above to go to the [Releases page](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
-   - Look for the latest release (usually at the top)
-   - Scroll down to the "Assets" section
-   - Click on the APK file (e.g., `app-debug.apk` or similar)
-   - The file will download to your phone's Downloads folder
-   - **Note**: If no APK is available, you may need to [build from source](#-building-from-source) or wait for the developer to upload it
+   - Click the green button above - it will automatically download the APK file
+   - The file will download directly to your phone's Downloads folder
+   - **Alternative**: If the automatic download doesn't work, go to [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest) and download from Assets section
 
 2. **Enable Unknown Sources** (First time only):
    - Go to: `Settings → Security → Install unknown apps` (or `Settings → Apps → Special access → Install unknown apps`)
@@ -423,11 +421,13 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 
 ### 📱 Download Latest APK
 
-[![Download APK](https://img.shields.io/badge/Download-APK_Latest-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
+[![Download APK](https://img.shields.io/badge/Download-APK_Latest-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
-**Visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
+**Direct Download**: [app-debug.apk](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
-> **📝 Note**: Download the APK from the "Assets" section of the release page. If no APK is available for v1.0.8-fix yet, check earlier releases or build from source.
+**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
+
+> **📝 Note**: The button automatically downloads the APK from the latest release (same as v1.0.5). Just click and install!
 
 </details>
 
