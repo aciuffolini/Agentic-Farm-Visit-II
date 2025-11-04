@@ -214,12 +214,19 @@ npx cap open android
 
 ### Automated Build (GitHub Actions)
 
-The repository includes a GitHub Actions workflow that automatically builds the APK:
+The repository includes a GitHub Actions workflow that automatically builds the APK and creates releases:
 
-- **Manual trigger**: Go to Actions → "Build Android APK" → Run workflow
-- **Auto on tag**: Creates release automatically when you push a tag like `v1.0.0`
+- **Manual trigger**: Go to [Actions](https://github.com/aciuffolini/Agentic-Farm-Visit/actions/workflows/build-apk.yml) → "Build Android APK" → "Run workflow" → Run
+- **Auto on tag**: Creates release automatically when you push a tag like `v1.0.8-fix`
+- **What it does**: Builds APK, creates GitHub Release, uploads APK, marks as latest
 
-See [`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml)
+**To make v1.0.8-fix downloadable**: 
+1. Go to [Actions](https://github.com/aciuffolini/Agentic-Farm-Visit/actions/workflows/build-apk.yml)
+2. Click "Run workflow" → Run
+3. Wait 5-10 minutes for build
+4. Release will be created automatically with APK
+
+See [`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml) | [SOLUTION_FINAL.md](./SOLUTION_FINAL.md)
 
 ---
 
