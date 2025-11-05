@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.9-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Android-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -20,7 +20,7 @@
 
 ### 🎯 **One-Click Download**
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.9-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
 **Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 
@@ -373,11 +373,19 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Last Commit**: Latest - Major improvements: Diagnostics, security, error handling (2025-01-XX)
+**Last Commit**: v1.0.9 - Build system fixes, GitHub Pages deployment resolved (2025-01-XX)
 
-**Latest Version**: v1.0.8
+**Latest Version**: v1.0.9
 
-### ✨ What's New in v1.0.8
+### ✨ What's New in v1.0.9
+
+- **🔧 Build System Fixes**
+  - Fixed GitHub Pages deployment workflow (removed problematic `tsc -b` step)
+  - Simplified build process - Vite now handles all TypeScript compilation
+  - Improved workspace package resolution for monorepo builds
+  - Better error handling and diagnostics in CI/CD pipeline
+
+- **📦 Previous Updates (v1.0.8)**
 
 - **🔒 Security Improvements**
   - Password hashing with SHA-256 (no plain text storage)
@@ -411,12 +419,12 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
   - Better developer tools and scripts
   - Comprehensive diagnostic documentation
 
-- **Version**: **v1.0.8**
+- **Version**: **v1.0.9**
   - Major stability, security, and developer experience improvements
 
 ### 📱 Download Latest APK
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.9-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
 **Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 
