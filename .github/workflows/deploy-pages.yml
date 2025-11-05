@@ -25,77 +25,139 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
-      - name: Install root dependencies
+      # Fix #1: Monorepo workspace - Install all dependencies at root first
+      - name: Install all dependencies
         run: |
-          echo "=== INSTALLING ROOT DEPENDENCIES ==="
+          echo "=== INSTALLING ALL DEPENDENCIES ==="
+          echo "Using npm workspaces to install all dependencies..."
           npm install --legacy-peer-deps || {
             echo "❌ Root install failed"
-            exit 1
+            echo "Trying with workspace install..."
+            npm install --workspaces --legacy-peer-deps || {
+              echo "❌ Workspace install also failed"
+              exit 1
+            }
           }
-          echo "✅ Root dependencies installed"
+          echo "✅ All dependencies installed"
 
+      # Fix #2: Build shared package first (required dependency)
       - name: Build shared package
         run: |
           echo "=== BUILDING SHARED PACKAGE ==="
           cd packages/shared
           echo "Current directory: $(pwd)"
-          echo "Installing dependencies..."
-          npm install --legacy-peer-deps 2>&1 | tee install.log || {
-            echo "❌ Shared package install failed"
-            echo "=== INSTALL ERROR LOG ==="
-            tail -50 install.log
-            echo "========================"
-            exit 1
-          }
-          echo "Running build..."
+          echo "Package.json exists: $([ -f package.json ] && echo 'YES' || echo 'NO')"
+          
+          # Check if dist exists and is recent
+          if [ -d "dist" ]; then
+            echo "⚠️  dist directory already exists, rebuilding..."
+            rm -rf dist
+          fi
+          
+          echo "Running TypeScript build..."
           npm run build 2>&1 | tee build.log || {
             echo "❌ Shared package build failed"
             echo "=== BUILD ERROR LOG ==="
-            tail -50 build.log
+            cat build.log
             echo "======================"
+            echo "TypeScript version:"
+            npx tsc --version || echo "tsc not found"
+            echo "Checking tsconfig.json:"
+            cat tsconfig.json || echo "tsconfig.json not found"
             exit 1
           }
+          
+          # Verify build output
+          if [ ! -d "dist" ] || [ ! -f "dist/index.js" ]; then
+            echo "❌ Build output verification failed"
+            echo "Directory contents:"
+            ls -la
+            echo "Dist contents (if exists):"
+            ls -la dist/ || echo "dist directory does not exist"
+            exit 1
+          fi
+          
           echo "✅ Shared package built successfully"
+          echo "Dist contents:"
+          ls -la dist/ | head -10
 
+      # Fix #3: Build web app with proper environment and error handling
       - name: Build web app
         env:
           VITE_BASE_PATH: /Agentic-Farm-Visit/
         run: |
           echo "=== BUILDING WEB APP ==="
           cd apps/web
-          echo "VITE_BASE_PATH: ${VITE_BASE_PATH}"
           echo "Current directory: $(pwd)"
-          echo "Installing dependencies..."
-          npm install --legacy-peer-deps 2>&1 | tee install.log || {
-            echo "❌ Web app install failed"
-            echo "=== INSTALL ERROR LOG ==="
-            tail -50 install.log
-            echo "========================"
-            exit 1
+          echo "VITE_BASE_PATH: ${VITE_BASE_PATH}"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          
+          # Verify shared package is built
+          if [ ! -f "../../packages/shared/dist/index.js" ]; then
+            echo "❌ Shared package not built! Building it first..."
+            cd ../../packages/shared
+            npm run build || {
+              echo "❌ Failed to build shared package"
+              exit 1
+            }
+            cd ../../apps/web
+          fi
+          
+          echo "Running TypeScript type check..."
+          npm run type-check 2>&1 | tee typecheck.log || {
+            echo "⚠️  TypeScript type check failed, but continuing..."
+            echo "Type errors:"
+            tail -50 typecheck.log
           }
-          echo "Running build with GitHub Pages base path..."
+          
+          echo "Running build..."
           npm run build 2>&1 | tee build.log || {
             echo "❌ Web app build failed"
             echo "=== BUILD ERROR LOG ==="
             tail -100 build.log
             echo "======================"
+            echo "Checking for common issues:"
+            echo "- TypeScript errors:"
+            grep -i "error TS" build.log | head -20 || echo "No TS errors found"
+            echo "- Vite errors:"
+            grep -i "vite\|error" build.log | tail -20 || echo "No Vite errors found"
             exit 1
           }
+          
+          # Fix #4: Verify build output thoroughly
           echo "Verifying build output..."
-          if [ ! -d "dist" ] || [ ! -f "dist/index.html" ]; then
-            echo "❌ Build output verification failed"
+          if [ ! -d "dist" ]; then
+            echo "❌ dist directory not found!"
             echo "Directory contents:"
-            ls -la || echo "Cannot list directory"
-            echo "Dist contents (if exists):"
-            ls -la dist/ || echo "dist directory does not exist"
+            ls -la
             exit 1
           fi
+          
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ dist/index.html not found!"
+            echo "Dist directory contents:"
+            ls -la dist/
+            exit 1
+          fi
+          
+          # Check if base path is correct in index.html
+          if grep -q 'href="/Agentic-Farm-Visit/' dist/index.html || grep -q 'src="/Agentic-Farm-Visit/' dist/index.html; then
+            echo "✅ Base path correctly set in build output"
+          else
+            echo "⚠️  Warning: Base path might not be set correctly in build output"
+            echo "Checking index.html:"
+            head -20 dist/index.html
+          fi
+          
           echo "✅ Web app built successfully"
-          echo "Build output:"
-          ls -la dist/ | head -10
+          echo "Build output size:"
+          du -sh dist/
+          echo "Key files:"
+          ls -lh dist/*.html dist/*.js dist/*.css 2>/dev/null | head -10
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -105,6 +167,7 @@ jobs:
         with:
           path: 'apps/web/dist'
 
+  # Fix #5: Deploy job with proper environment and error handling
   deploy:
     environment:
       name: github-pages
@@ -118,3 +181,18 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Check deployment status
+        if: always()
+        run: |
+          if [ "${{ steps.deployment.outcome }}" != "success" ]; then
+            echo "⚠️  Deployment may have failed"
+            echo "This is often because GitHub Pages is not enabled in repository settings."
+            echo "Go to: https://github.com/${{ github.repository }}/settings/pages"
+            echo "Set Source to: GitHub Actions"
+            exit 1
+          else
+            echo "✅ Deployment successful!"
+            echo "URL: ${{ steps.deployment.outputs.page_url }}"
+          fi
