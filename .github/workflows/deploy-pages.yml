@@ -111,11 +111,14 @@ jobs:
           echo "================================="
 
       - name: Build web app
+        env:
+          VITE_BASE_PATH: /Agentic-Farm-Visit/
         run: |
           echo "=== BUILDING WEB APP ==="
           cd apps/web
           echo "Current directory: $(pwd)"
           echo "Package.json exists: $([ -f package.json ] && echo 'YES' || echo 'NO')"
+          echo "VITE_BASE_PATH: ${VITE_BASE_PATH}"
           
           echo "Installing dependencies..."
           npm install --legacy-peer-deps 2>&1 | tee ../web-install.log || {
@@ -124,7 +127,7 @@ jobs:
             exit 1
           }
           
-          echo "Running build..."
+          echo "Running build with GitHub Pages base path..."
           npm run build 2>&1 | tee ../web-build.log || {
             echo "❌ Web app build failed"
             echo "=== BUILD ERROR LOG ==="
@@ -157,18 +160,15 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
-        continue-on-error: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'apps/web/dist'
-        continue-on-error: true
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        continue-on-error: true
 
       - name: Final diagnostic
         if: always()
