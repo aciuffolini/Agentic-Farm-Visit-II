@@ -27,17 +27,26 @@ jobs:
         with:
           node-version: '20'
 
-      # Install at root - npm workspaces will handle everything
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
+      # Install shared package dependencies
+      - name: Install shared package dependencies
+        run: |
+          cd packages/shared
+          npm install
 
-      # Build shared package first (web app depends on it)
+      # Build shared package
       - name: Build shared package
         run: |
           cd packages/shared
           npm run build
 
-      # Build web app
+      # Install web app dependencies (without workspace linking)
+      - name: Install web app dependencies
+        run: |
+          cd apps/web
+          # Remove workspace dependency temporarily for install
+          npm install --legacy-peer-deps
+
+      # Build web app (Vite alias will resolve @farm-visit/shared)
       - name: Build web app
         env:
           VITE_BASE_PATH: /Agentic-Farm-Visit/
