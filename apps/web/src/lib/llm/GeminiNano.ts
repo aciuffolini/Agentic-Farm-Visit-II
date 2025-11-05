@@ -45,23 +45,14 @@ export class GeminiNano {
 
   /**
    * Check if Gemini Nano is available on this device
-   * In development mode, mock is available for web testing
+   * IMPORTANT: On web, ALWAYS return false immediately to allow fallback to Cloud API
    */
   async checkAvailability(): Promise<boolean> {
-    // On web, check if mock mode is enabled (development)
+    // On web, always return false - use Cloud API instead
     if (!Capacitor.isNativePlatform()) {
-      try {
-        const result = await GeminiNanoNative.isAvailable();
-        // Allow mock mode for development testing
-        this.available = result.available || false;
-        if (this.available && result.reason?.includes('Mock')) {
-          console.log('[GeminiNano] Using mock mode for development testing');
-        }
-        return this.available;
-      } catch (err) {
-        this.available = false;
-        return false;
-      }
+      this.available = false;
+      console.log('[GeminiNano] Web platform - Gemini Nano not available, use Cloud API');
+      return false;
     }
 
     try {
@@ -88,19 +79,12 @@ export class GeminiNano {
 
   /**
    * Initialize Gemini Nano model
-   * Works with mock mode in development
+   * Only works on Android 14+ devices with AICore
    */
   async initialize(): Promise<void> {
-    // Allow initialization in web mock mode for development
+    // Only available on native Android platform
     if (!Capacitor.isNativePlatform()) {
-      const result = await GeminiNanoNative.isAvailable();
-      if (result.available && result.reason?.includes('Mock')) {
-        // Mock mode - allow initialization
-        const initResult = await GeminiNanoNative.initialize();
-        this.initialized = initResult.initialized;
-        return;
-      }
-      throw new Error('Gemini Nano only available on Android devices (or in development mock mode)');
+      throw new Error('Gemini Nano only available on Android 14+ devices with AICore');
     }
 
     try {
@@ -120,14 +104,15 @@ export class GeminiNano {
    * Generate text completion
    */
   async generate(input: GeminiNanoInput): Promise<GeminiNanoOutput> {
+    // On web, throw immediately - use Cloud API instead
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error('Gemini Nano not available on web - will fallback to Cloud API');
+    }
+    
     if (!this.available) {
       await this.checkAvailability();
       
       if (!this.available) {
-        // In development, provide helpful message
-        if (!Capacitor.isNativePlatform()) {
-          throw new Error('Gemini Nano not available on web. For testing, use localhost (development mode). For real AI, build Android APK.');
-        }
         throw new Error('Gemini Nano not available on this device. Requires Android 14+ with AICore support.');
       }
     }
@@ -172,14 +157,15 @@ export class GeminiNano {
    * Uses Capacitor event listener pattern for async streaming
    */
   async *stream(input: GeminiNanoInput): AsyncGenerator<string> {
+    // On web, throw immediately - use Cloud API instead
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error('Gemini Nano not available on web - will fallback to Cloud API');
+    }
+    
     if (!this.available) {
       await this.checkAvailability();
       
       if (!this.available) {
-        // In development, provide helpful message
-        if (!Capacitor.isNativePlatform()) {
-          throw new Error('Gemini Nano not available on web. For testing, use localhost (development mode). For real AI, build Android APK.');
-        }
         throw new Error('Gemini Nano not available on this device. Requires Android 14+ with AICore support.');
       }
     }
@@ -344,8 +330,15 @@ export class GeminiNano {
 
   /**
    * Check if Gemini Nano is available
+   * CRITICAL: On web, always returns false immediately without async checks
    */
   async isAvailable(): Promise<boolean> {
+    // On web, return false immediately without any async operations
+    if (!Capacitor.isNativePlatform()) {
+      this.available = false;
+      return false;
+    }
+    
     if (!this.available) {
       await this.checkAvailability();
     }

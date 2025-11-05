@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.8--fix-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Android-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -20,40 +20,22 @@
 
 ### 🎯 **One-Click Download**
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
-**Direct Download**: [app-debug.apk](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)  
-**Visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
-
-> **📦 To Install**: Click the green button above - it will automatically download the latest APK (v1.0.8-fix). Then enable "Install from Unknown Sources" in your Android settings before installing.
+**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 
 </div>
 
 ### 📋 Installation Steps
 
-1. **Download APK**:
-   - Click the green button above - it will automatically download the latest APK (v1.0.8-fix)
-   - The file will download directly to your phone's Downloads folder
-   - If download doesn't start, visit the [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest) page and download from Assets section
+1. **Download APK** using the button above or visit [Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
+2. **Enable Unknown Sources**:
+   - Go to: `Settings → Security → Install unknown apps`
+   - Enable for your browser (Chrome/Edge)
+3. **Install APK** from your Downloads folder
+4. **Launch app** and enter password when prompted
 
-2. **Enable Unknown Sources** (First time only):
-   - Go to: `Settings → Security → Install unknown apps` (or `Settings → Apps → Special access → Install unknown apps`)
-   - Select your browser (Chrome/Edge/Firefox)
-   - Enable "Allow from this source"
-
-3. **Install APK**:
-   - Open your Downloads folder
-   - Tap on the downloaded APK file
-   - Tap "Install"
-   - Wait for installation to complete
-
-4. **Launch app**:
-   - Open the Farm Visit app from your app drawer
-   - Enter password when prompted (contact aciuffolini@teknal.com.ar for access)
-
-> **📝 Note**: If the APK is not available on the release page, you can [build it from source](#-building-from-source) or contact the developer.
-
-> **🔧 For Developers**: See [BUILD_AND_UPLOAD_APK.md](./BUILD_AND_UPLOAD_APK.md) for instructions to build and upload the APK.
+> **Note**: The APK will be available after the first release is created. If you don't see the download button, check [How to Build APK](#-building-from-source).
 
 ---
 
@@ -70,8 +52,8 @@
 - ✅ **GPS Capture**: High-accuracy location tracking
 - ✅ **Voice Notes**: Native audio recording with transcription
 - ✅ **Photo Capture**: Native camera access
-- ✅ **AI Assistance**: Gemini API or enhanced mock extracts structured fields
-- ✅ **Real-Time Chat**: Context-aware AI assistant (Gemini API recommended)
+- ✅ **AI Assistance**: Cloud LLM (OpenAI/Groq) with per-device API key. On-device LLM (Gemini Nano) planned for Android 14+
+- ✅ **Real-Time Chat**: Context-aware AI assistant using cloud LLM (API key required)
 - ✅ **Offline Sync**: Outbox pattern for network failures
 - ✅ **Farm Mapping**: KMZ/KML support from Google Earth
 
@@ -214,19 +196,12 @@ npx cap open android
 
 ### Automated Build (GitHub Actions)
 
-The repository includes a GitHub Actions workflow that automatically builds the APK and creates releases:
+The repository includes a GitHub Actions workflow that automatically builds the APK:
 
-- **Manual trigger**: Go to [Actions](https://github.com/aciuffolini/Agentic-Farm-Visit/actions/workflows/build-apk.yml) → "Build Android APK" → "Run workflow" → Run
-- **Auto on tag**: Creates release automatically when you push a tag like `v1.0.8-fix`
-- **What it does**: Builds APK, creates GitHub Release, uploads APK, marks as latest
+- **Manual trigger**: Go to Actions → "Build Android APK" → Run workflow
+- **Auto on tag**: Creates release automatically when you push a tag like `v1.0.0`
 
-**To make v1.0.8-fix downloadable**: 
-1. Go to [Actions](https://github.com/aciuffolini/Agentic-Farm-Visit/actions/workflows/build-apk.yml)
-2. Click "Run workflow" → Run
-3. Wait 5-10 minutes for build
-4. Release will be created automatically with APK
-
-See [`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml) | [SOLUTION_FINAL.md](./SOLUTION_FINAL.md)
+See [`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml)
 
 ---
 
@@ -294,7 +269,7 @@ For API keys, server features, or access requests, please contact:
 **Atilio Ciuffolini**  
 📧 **Email**: [aciuffolini@teknal.com.ar](mailto:aciuffolini@teknal.com.ar)
 
-**Note**: The app works **offline-first** with Gemini Nano. API keys are only needed for server sync features.
+**Note**: The app uses **offline-first data capture** (GPS, photos, voice notes). For AI assistance, **on-device LLM** (Gemini Nano) support is planned for Android 14+ devices. Currently, the chat assistant uses a **cloud LLM** (per-device API key required). API keys are stored locally on each device and never shared.
 
 📚 See [SECURITY_STRATEGY.md](./SECURITY_STRATEGY.md) for full security details.
 
@@ -398,43 +373,52 @@ See [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) for details.
 <details>
 <summary><b>🔄 Latest Changes</b></summary>
 
-**Latest Version**: v1.0.8-fix
+**Last Commit**: Latest - Major improvements: Diagnostics, security, error handling (2025-01-XX)
 
-### ✨ What's New in v1.0.8-fix
+**Latest Version**: v1.0.8
 
-- **🔧 Bug Fixes:**
-  - Fixed GPT-4o mini integration with enhanced debug logging
-  - Fixed hardcoded prompts in Gemini Nano and Llama Local to use enhanced prompts
-  - All models now properly receive structured visit context
+### ✨ What's New in v1.0.8
 
-- **🤖 Model Selection**: Choose your preferred AI model
-  - **Auto Mode**: Automatically uses best available model (offline-first)
-  - **Nano**: Gemini Nano for offline Android 14+ devices
-  - **ChatGPT 4o mini**: Cloud-based model (requires API key and server endpoint `/api/chat`)
-  - **Llama Small**: Local offline model for any Android 7+ device
+- **🔒 Security Improvements**
+  - Password hashing with SHA-256 (no plain text storage)
+  - Secure password validation
+  - Better authentication flow
 
-- **📝 Enhanced Prompt Engineering**: Improved context understanding
-  - **Structured visit data**: GPS coordinates with accuracy, notes, photos, audio recordings
-  - **Latest saved visit**: Complete record with field ID, crop, issue, severity
-  - **Photo and audio awareness**: AI acknowledges and references media in responses
-  - **Better context formatting**: Well-organized structured prompts for all models
+- **🔍 Diagnostic Tools & Error Handling**
+  - Comprehensive proxy error diagnostics (tests 10 conditions)
+  - Server status checker (`check-server.ps1`)
+  - Automatic server management scripts
+  - Context-aware error messages with actionable steps
+  - Improved server connection error detection
 
-- **🔄 Maintained Offline-First**: Online/offline interaction preserved
-  - Auto mode still prioritizes offline models (Nano → Llama → Cloud API)
-  - Explicit model selection allows forcing specific models when needed
-  - All models receive enhanced structured context
+- **🐛 Bug Fixes**
+  - Fixed TypeScript syntax errors in test-server.js
+  - Improved server interface binding (explicit localhost)
+  - Removed dead Gemini Nano mock code
+  - Fixed proxy error suppression
+  - Better error detection (503, 500, timeout, connection errors)
 
-**Note**: GPT-4o mini requires a backend server with `/api/chat` endpoint and an API key. For offline use, select Nano or Llama Small models which work without internet.
+- **📱 UI/UX Improvements**
+  - Enhanced error messages with verification steps
+  - Better API key input visibility and auto-prompt
+  - Clearer instructions for troubleshooting
+  - Improved chat error feedback
+  - Better user guidance for server setup
+
+- **⚙️ Configuration & Developer Experience**
+  - GitHub Pages base path support (configurable via VITE_BASE_PATH)
+  - Improved proxy error suppression
+  - Better developer tools and scripts
+  - Comprehensive diagnostic documentation
+
+- **Version**: **v1.0.8**
+  - Major stability, security, and developer experience improvements
 
 ### 📱 Download Latest APK
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8--fix-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.8-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
-**Direct Download**: [app-debug.apk](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
-
-**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest) | [All Releases](https://github.com/aciuffolini/Agentic-Farm-Visit/releases)
-
-> **📝 Note**: The button downloads from the latest release. Make sure v1.0.8-fix is published as a release (not just a tag) for it to be the latest.
+**Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 
 </details>
 

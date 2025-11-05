@@ -152,6 +152,15 @@ Respond in a friendly, professional manner suitable for field work.`
             console.log('   📝 System message (with context):', systemMsg?.content?.substring(0, 200) + '...');
           }
 
+          // Check for vision content (images in content arrays)
+          const userMsg = messagesWithSystem.find((m) => m.role === 'user');
+          const hasVision = userMsg && Array.isArray(userMsg.content);
+          if (hasVision) {
+            const imageCount = userMsg.content.filter((item) => item.type === 'image_url').length;
+            console.log('   📷 Vision content detected:', imageCount, 'image(s) in user message');
+            console.log('   📷 User message content type:', typeof userMsg.content, Array.isArray(userMsg.content) ? '(array format)' : '(string)');
+          }
+
           const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -208,11 +217,24 @@ Respond in a friendly, professional manner suitable for field work.`
   }
 });
 
-server.listen(PORT, () => {
+// Listen on localhost explicitly to ensure proper interface binding
+server.listen(PORT, 'localhost', () => {
   console.log(`\n✅ Test Server Running`);
   console.log(`   URL: http://localhost:${PORT}`);
   console.log(`   Endpoint: http://localhost:${PORT}/api/chat`);
   console.log(`   Health: http://localhost:${PORT}/health\n`);
   console.log('📡 Ready to receive requests...\n');
+});
+
+// Handle server errors
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Error: Port ${PORT} is already in use`);
+    console.error('   Solution: Kill the process using port 3000 or change PORT in this file\n');
+    process.exit(1);
+  } else {
+    console.error(`\n❌ Server error: ${err.message}\n`);
+    process.exit(1);
+  }
 });
 

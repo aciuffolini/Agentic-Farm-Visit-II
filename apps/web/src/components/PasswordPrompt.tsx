@@ -1,40 +1,51 @@
 /**
  * Password Prompt Component
  * Protects app access with password authentication
+ * Uses SHA-256 hashing for secure password validation
  */
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { validatePassword } from '../lib/config/password';
 
 interface PasswordPromptProps {
   onSuccess: () => void;
 }
 
-const APP_PASSWORD = import.meta.env.VITE_APP_PASSWORD || 'Fotheringham933@';
-
 export function PasswordPrompt({ onSuccess }: PasswordPromptProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [attempts, setAttempts] = useState(0);
+  const [isValidating, setIsValidating] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsValidating(true);
     
-    // Validate password
-    if (password === APP_PASSWORD) {
-      // Store authentication in sessionStorage
-      sessionStorage.setItem('app_authenticated', 'true');
-      sessionStorage.setItem('auth_timestamp', Date.now().toString());
-      onSuccess();
-    } else {
-      setAttempts(prev => prev + 1);
-      setError('Contraseña incorrecta. Intenta nuevamente.');
-      setPassword('');
+    try {
+      // Validate password using hash comparison
+      const isValid = await validatePassword(password);
       
-      // Block after 5 failed attempts
-      if (attempts >= 4) {
-        setError('Demasiados intentos fallidos. Cierra la app e intenta de nuevo.');
+      if (isValid) {
+        // Store authentication in sessionStorage
+        sessionStorage.setItem('app_authenticated', 'true');
+        sessionStorage.setItem('auth_timestamp', Date.now().toString());
+        onSuccess();
+      } else {
+        setAttempts(prev => prev + 1);
+        setError('Contraseña incorrecta. Intenta nuevamente.');
+        setPassword('');
+        
+        // Block after 5 failed attempts
+        if (attempts >= 4) {
+          setError('Demasiados intentos fallidos. Cierra la app e intenta de nuevo.');
+        }
       }
+    } catch (err) {
+      console.error('[PasswordPrompt] Validation error:', err);
+      setError('Error al validar contraseña. Intenta nuevamente.');
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -99,10 +110,10 @@ export function PasswordPrompt({ onSuccess }: PasswordPromptProps) {
 
               <button
                 type="submit"
-                disabled={!password.trim() || attempts >= 5}
+                disabled={!password.trim() || attempts >= 5 || isValidating}
                 className="w-full bg-emerald-600 text-white py-3 rounded-xl font-medium hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {attempts >= 5 ? 'Bloqueado' : 'Acceder'}
+                {isValidating ? 'Validando...' : attempts >= 5 ? 'Bloqueado' : 'Acceder'}
               </button>
             </form>
 

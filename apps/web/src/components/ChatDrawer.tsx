@@ -175,8 +175,31 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
       const stats = llmProvider.getStats();
       const hasApiKey = getUserApiKey();
       
+      // Check if it's a server connection error (ECONNREFUSED, Cannot connect to server)
+      if (err.message?.includes('ECONNREFUSED') || 
+          err.message?.includes('Cannot connect to server') ||
+          err.message?.includes('Connection refused') ||
+          err.message?.includes('connect ECONNREFUSED') ||
+          err.message?.includes('Failed to fetch') ||
+          (err.message?.includes('fetch') && err.message?.includes('ERR_CONNECTION_REFUSED'))) {
+        errorMessage = '⚠️ **Server Connection Error**\n\n';
+        errorMessage += 'Cannot connect to the test server. Please check:\n\n';
+        errorMessage += '1. **Is the server running?**\n';
+        errorMessage += '   Run: `node test-server.js` in a separate terminal\n';
+        errorMessage += '   Expected output: "✅ Test Server Running"\n\n';
+        errorMessage += '2. **Verify server is working:**\n';
+        errorMessage += '   Open: http://localhost:3000/health\n';
+        errorMessage += '   Should return: `{"ok":true,"message":"Test server running"}`\n\n';
+        errorMessage += '3. **Set your API key** using the 🔑 button above\n';
+        errorMessage += '4. **Try again** after the server is running\n\n';
+        
+        // Automatically show API key input if not shown
+        if (!showApiKeyInput) {
+          setTimeout(() => setShowApiKeyInput(true), 500);
+        }
+      } 
       // Check if it's a Cloud API authentication error
-      if (err.message?.includes('401') || err.message?.includes('unauthorized') || 
+      else if (err.message?.includes('401') || err.message?.includes('unauthorized') || 
           (err.message?.includes('Cloud API') && !hasApiKey && navigator.onLine)) {
         errorMessage = '⚠️ **API Key Required for Cloud API**\n\n';
         errorMessage += 'To use Cloud API fallback, you need to set an API key:\n\n';
@@ -189,22 +212,88 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         if (!showApiKeyInput) {
           setTimeout(() => setShowApiKeyInput(true), 500);
         }
-      } else if (err.message?.includes('not available') || err.message?.includes('No LLM provider available')) {
+      } 
+      // Check if server returned 503 (server unavailable response from proxy)
+      else if (err.message?.includes('503') || err.message?.includes('API server unavailable') || 
+               err.message?.includes('Test server is not running')) {
+        errorMessage = '⚠️ **Test Server Not Running**\n\n';
+        errorMessage += 'The proxy indicates the server is not available.\n\n';
+        errorMessage += '**Quick Check:**\n';
+        errorMessage += '1. Open: http://localhost:3000/health\n';
+        errorMessage += '2. If you see `{"ok":true}`, server IS running\n';
+        errorMessage += '3. If connection fails, start server: `node test-server.js`\n\n';
+        errorMessage += '**To start server:**\n';
+        errorMessage += '```bash\n';
+        errorMessage += 'cd apps/web\n';
+        errorMessage += 'node test-server.js\n';
+        errorMessage += '```\n';
+      }
+      // Check if it's a server endpoint not found error
+      else if (err.message?.includes('404') || err.message?.includes('Server endpoint not found')) {
+        errorMessage = '⚠️ **Server Endpoint Not Found**\n\n';
+        errorMessage += 'The server is running but the endpoint is not available.\n\n';
+        errorMessage += '**Diagnosis:**\n';
+        errorMessage += '1. Server is running (not a connection issue)\n';
+        errorMessage += '2. But `/api/chat` endpoint not found\n\n';
+        errorMessage += '**Check:**\n';
+        errorMessage += '- Server console for errors\n';
+        errorMessage += '- Test: http://localhost:3000/api/chat (should return JSON)\n\n';
+      }
+      // Check if server returned 500 (server error)
+      else if (err.message?.includes('500') || err.message?.includes('Internal Server Error')) {
+        errorMessage = '⚠️ **Server Error**\n\n';
+        errorMessage += 'The server returned an error. This might be:\n\n';
+        errorMessage += '1. **API key issue** - Check if your API key is valid\n';
+        errorMessage += '2. **OpenAI API error** - Check server console for details\n';
+        errorMessage += '3. **Server configuration** - Check server logs\n\n';
+        errorMessage += '**Quick fix:**\n';
+        errorMessage += '- Check server console for error details\n';
+        errorMessage += '- Verify API key is correct (if using custom key)\n';
+      }
+      // Check if it's a timeout error
+      else if (err.message?.includes('timeout') || err.message?.includes('Request timeout')) {
+        errorMessage = '⚠️ **Connection Timeout**\n\n';
+        errorMessage += 'The server is taking too long to respond.\n\n';
+        errorMessage += 'Possible causes:\n';
+        errorMessage += '1. Server is slow or overloaded\n';
+        errorMessage += '2. Network connection is slow\n';
+        errorMessage += '3. Server might be unreachable\n\n';
+        errorMessage += 'Try again in a moment or check if the server is running.';
+      }
+      // Check if no providers are available
+      else if (err.message?.includes('not available') || err.message?.includes('No LLM provider available')) {
         errorMessage += '\n\n**Available options:**\n';
         errorMessage += '• Android 14+ with AICore → Gemini Nano\n';
         errorMessage += '• Any Android 7+ → Llama Local (requires model download)\n';
-        errorMessage += '• Online → Cloud API (requires API key)\n\n';
-        if (!hasApiKey && navigator.onLine) {
-          errorMessage += '💡 **Tip:** Click **🔑 Set API Key** above to enable Cloud API.';
+        errorMessage += '• Online → Cloud API (requires API key + server)\n\n';
+        
+        // Check if server might be running (for web users)
+        if (navigator.onLine) {
+          if (!hasApiKey) {
+            errorMessage += '💡 **To use Cloud API:**\n';
+            errorMessage += '   1. Click **🔑 Set API Key** above\n';
+            errorMessage += '   2. Enter your API key\n';
+            errorMessage += '   3. Make sure test server is running: `node test-server.js`\n\n';
+          } else {
+            errorMessage += '💡 **You have an API key set.** Make sure the test server is running:\n';
+            errorMessage += '   Run: `node test-server.js` in a separate terminal\n';
+            errorMessage += '   Then verify: http://localhost:3000/health\n\n';
+          }
         }
-      } else if (err.message?.includes('not initialized')) {
+      } 
+      // Check if model is initializing
+      else if (err.message?.includes('not initialized')) {
         errorMessage += 'The AI model is still initializing. Please try again in a moment.';
-      } else if (err.message?.includes('timeout')) {
-        errorMessage += 'The request timed out. Please check your connection and try again.';
-      } else {
+      } 
+      // Generic error
+      else {
         errorMessage += err.message || 'Unknown error. Please try again.';
         if (stats.fallbackReason) {
           errorMessage += `\n\nDebug: ${stats.fallbackReason}`;
+        }
+        // Add helpful hint for connection errors
+        if (err.message?.includes('fetch') || err.message?.includes('network')) {
+          errorMessage += '\n\n💡 **Hint:** Make sure the test server is running: `node test-server.js`';
         }
       }
       
@@ -256,9 +345,9 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                     ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100' 
                     : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'
                 }`}
-                title={getUserApiKey() ? 'API key configured ✓' : '⚠️ Set API key for Cloud API'}
+                title={getUserApiKey() ? 'API key configured ✓ - Click to view/edit' : '⚠️ Set API key for Cloud API - Required for online chat'}
               >
-                {getUserApiKey() ? '🔑 API Key Set' : '🔑 Set API Key'}
+                {getUserApiKey() ? '🔑 API Key Set ✓' : '🔑 Set API Key'}
               </button>
               <button onClick={onClose} className="text-slate-500 text-sm hover:text-slate-700">
                 Close
@@ -273,29 +362,36 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                 <div className="text-sm font-semibold text-amber-900 mb-1">
                   🔑 API Key Required for Cloud API
                 </div>
-                <p className="text-xs text-amber-700">
-                  Enter your API key to use Cloud API fallback. Key is stored locally on this device.
+                <p className="text-xs text-amber-700 mb-2">
+                  Enter your API key to use Cloud API fallback. Key is stored locally on this device and never shared.
                 </p>
+                <div className="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded border border-amber-200">
+                  💡 <strong>Tip:</strong> Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-800">OpenAI Platform</a> or <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-800">Groq Console</a>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <input
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-..."
+                  placeholder="sk-proj-... or sk-... (Enter your API key)"
                   className="flex-1 text-sm px-3 py-2 rounded-lg border-2 border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleApiKeySave();
                     } else if (e.key === 'Escape') {
                       setShowApiKeyInput(false);
+                      setApiKey(getUserApiKey());
                     }
                   }}
+                  title="Enter your API key. Press Enter to save, Esc to cancel."
                   autoFocus
                 />
                 <button
                   onClick={handleApiKeySave}
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 shadow-sm"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Save API key (stored locally on this device)"
+                  disabled={!apiKey.trim()}
                 >
                   Save
                 </button>
@@ -304,7 +400,8 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                     setShowApiKeyInput(false);
                     setApiKey(getUserApiKey());
                   }}
-                  className="px-3 py-2 rounded-lg border border-amber-300 bg-white hover:bg-amber-50 text-amber-700"
+                  className="px-3 py-2 rounded-lg border border-amber-300 bg-white hover:bg-amber-50 text-amber-700 transition-colors"
+                  title="Cancel and close API key input"
                 >
                   Cancel
                 </button>
@@ -334,14 +431,16 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                     send();
                   }
                 }}
-                placeholder="Ask AI..."
-                className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none"
+                placeholder="Ask AI about your field visit... (Press Enter to send)"
+                className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
                 disabled={busy}
+                title="Type your message and press Enter to send"
               />
               <button
                 disabled={busy || !input.trim()}
                 onClick={send}
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm hover:shadow disabled:opacity-50"
+                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm hover:shadow hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                title={busy ? "Sending message..." : !input.trim() ? "Enter a message first" : "Send message (or press Enter)"}
               >
                 {busy ? '...' : 'Send'}
               </button>
