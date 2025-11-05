@@ -6,34 +6,21 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Diagnostic - Show environment
-        run: |
-          echo "=== ENVIRONMENT INFO ==="
-          echo "Node version: $(node --version || echo 'NOT FOUND')"
-          echo "NPM version: $(npm --version || echo 'NOT FOUND')"
-          echo "Working directory: $(pwd)"
-          echo "Repository structure:"
-          ls -la || echo "Cannot list directory"
-          echo "========================"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -41,74 +28,30 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Diagnostic - Verify Node setup
-        run: |
-          echo "=== NODE SETUP VERIFICATION ==="
-          node --version
-          npm --version
-          which node
-          which npm
-          echo "=============================="
-
       - name: Install root dependencies
         run: |
           echo "=== INSTALLING ROOT DEPENDENCIES ==="
-          npm install --legacy-peer-deps 2>&1 | tee root-install.log || {
-            echo "❌ Root install failed, checking log..."
-            tail -50 root-install.log
+          npm install --legacy-peer-deps || {
+            echo "❌ Root install failed"
             exit 1
           }
           echo "✅ Root dependencies installed"
-          echo "Checking package.json exists:"
-          [ -f package.json ] && echo "✓ package.json found" || echo "✗ package.json missing"
-          echo "================================"
-
-      - name: Diagnostic - Check workspace structure
-        run: |
-          echo "=== WORKSPACE STRUCTURE ==="
-          echo "Root files:"
-          ls -la | head -20
-          echo ""
-          echo "Checking packages/shared:"
-          [ -d packages/shared ] && ls -la packages/shared || echo "✗ packages/shared not found"
-          echo ""
-          echo "Checking apps/web:"
-          [ -d apps/web ] && ls -la apps/web | head -10 || echo "✗ apps/web not found"
-          echo "========================"
 
       - name: Build shared package
         run: |
           echo "=== BUILDING SHARED PACKAGE ==="
           cd packages/shared
-          echo "Current directory: $(pwd)"
-          echo "Package.json exists: $([ -f package.json ] && echo 'YES' || echo 'NO')"
-          
           echo "Installing dependencies..."
-          npm install --legacy-peer-deps 2>&1 | tee ../shared-install.log || {
+          npm install --legacy-peer-deps || {
             echo "❌ Shared package install failed"
-            tail -50 ../shared-install.log
             exit 1
           }
-          
           echo "Running build..."
-          npm run build 2>&1 | tee ../shared-build.log || {
+          npm run build || {
             echo "❌ Shared package build failed"
-            tail -50 ../shared-build.log
             exit 1
           }
-          
-          echo "Verifying dist directory..."
-          if [ ! -d "dist" ]; then
-            echo "❌ dist directory not found in shared package!"
-            echo "Contents of packages/shared:"
-            ls -la
-            exit 1
-          fi
-          
           echo "✅ Shared package built successfully"
-          echo "Dist contents:"
-          ls -la dist/ | head -10
-          echo "================================="
 
       - name: Build web app
         env:
@@ -116,47 +59,26 @@ jobs:
         run: |
           echo "=== BUILDING WEB APP ==="
           cd apps/web
-          echo "Current directory: $(pwd)"
-          echo "Package.json exists: $([ -f package.json ] && echo 'YES' || echo 'NO')"
           echo "VITE_BASE_PATH: ${VITE_BASE_PATH}"
-          
           echo "Installing dependencies..."
-          npm install --legacy-peer-deps 2>&1 | tee ../web-install.log || {
+          npm install --legacy-peer-deps || {
             echo "❌ Web app install failed"
-            tail -50 ../web-install.log
             exit 1
           }
-          
           echo "Running build with GitHub Pages base path..."
-          npm run build 2>&1 | tee ../web-build.log || {
+          npm run build || {
             echo "❌ Web app build failed"
-            echo "=== BUILD ERROR LOG ==="
-            tail -100 ../web-build.log
-            echo "======================"
             exit 1
           }
-          
-          echo "Verifying dist directory..."
-          if [ ! -d "dist" ]; then
-            echo "❌ dist directory not found!"
-            echo "Contents of apps/web:"
-            ls -la
-            exit 1
-          fi
-          
-          if [ ! -f "dist/index.html" ]; then
-            echo "❌ dist/index.html not found!"
-            echo "Dist directory contents:"
+          echo "Verifying build output..."
+          if [ ! -d "dist" ] || [ ! -f "dist/index.html" ]; then
+            echo "❌ Build output verification failed"
             ls -la dist/ || echo "dist directory does not exist"
             exit 1
           fi
-          
           echo "✅ Web app built successfully"
-          echo "Dist contents:"
-          ls -la dist/ | head -20
-          echo "File sizes:"
-          du -sh dist/* 2>/dev/null | head -10
-          echo "========================="
+          echo "Build output:"
+          ls -la dist/ | head -10
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -166,14 +88,16 @@ jobs:
         with:
           path: 'apps/web/dist'
 
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      - name: Final diagnostic
-        if: always()
-        run: |
-          echo "=== FINAL DIAGNOSTIC ==="
-          echo "Deployment step exit code: ${{ steps.deployment.outcome }}"
-          echo "Pages URL: ${{ steps.deployment.outputs.page_url || 'Not available' }}"
-          echo "======================="
