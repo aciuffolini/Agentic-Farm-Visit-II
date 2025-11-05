@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:android": "tsc -b && vite build --mode android",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "android:dev": "npm run build && npx cap sync android && npx cap run android",
-    "android:build": "npm run build && npx cap sync android && npx cap build android",
+    "android:dev": "npm run build:android && npx cap sync android && npx cap run android",
+    "android:build": "npm run build:android && npx cap sync android && npx cap build android",
     "android:open": "npx cap open android",
     "android:sync": "npx cap sync android"
   },

@@ -158,8 +158,8 @@ jobs:
             exit 1
           }
           
-          echo "Running build..."
-          npm run build 2>&1 | tee ../web-build.log || {
+          echo "Running Android build (no service worker)..."
+          npm run build:android 2>&1 | tee ../web-build.log || {
             echo "❌ PWA build failed"
             echo "=== BUILD ERROR LOG ==="
             tail -150 ../web-build.log
