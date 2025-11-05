@@ -41,14 +41,21 @@ jobs:
         run: |
           echo "=== BUILDING SHARED PACKAGE ==="
           cd packages/shared
+          echo "Current directory: $(pwd)"
           echo "Installing dependencies..."
-          npm install --legacy-peer-deps || {
+          npm install --legacy-peer-deps 2>&1 | tee install.log || {
             echo "❌ Shared package install failed"
+            echo "=== INSTALL ERROR LOG ==="
+            tail -50 install.log
+            echo "========================"
             exit 1
           }
           echo "Running build..."
-          npm run build || {
+          npm run build 2>&1 | tee build.log || {
             echo "❌ Shared package build failed"
+            echo "=== BUILD ERROR LOG ==="
+            tail -50 build.log
+            echo "======================"
             exit 1
           }
           echo "✅ Shared package built successfully"
@@ -60,19 +67,29 @@ jobs:
           echo "=== BUILDING WEB APP ==="
           cd apps/web
           echo "VITE_BASE_PATH: ${VITE_BASE_PATH}"
+          echo "Current directory: $(pwd)"
           echo "Installing dependencies..."
-          npm install --legacy-peer-deps || {
+          npm install --legacy-peer-deps 2>&1 | tee install.log || {
             echo "❌ Web app install failed"
+            echo "=== INSTALL ERROR LOG ==="
+            tail -50 install.log
+            echo "========================"
             exit 1
           }
           echo "Running build with GitHub Pages base path..."
-          npm run build || {
+          npm run build 2>&1 | tee build.log || {
             echo "❌ Web app build failed"
+            echo "=== BUILD ERROR LOG ==="
+            tail -100 build.log
+            echo "======================"
             exit 1
           }
           echo "Verifying build output..."
           if [ ! -d "dist" ] || [ ! -f "dist/index.html" ]; then
             echo "❌ Build output verification failed"
+            echo "Directory contents:"
+            ls -la || echo "Cannot list directory"
+            echo "Dist contents (if exists):"
             ls -la dist/ || echo "dist directory does not exist"
             exit 1
           fi
