@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import path from "path";
 
 // Track if we've already warned about the API server (module-level)
 let apiServerWarningShown = false;
@@ -77,6 +78,16 @@ export default defineConfig(({ mode }) => {
   
   return {
     base: basePath,
+    resolve: {
+      alias: {
+        // Use dist in production (built), src in development
+        '@farm-visit/shared': path.resolve(__dirname, 
+          process.env.NODE_ENV === 'production' 
+            ? '../../packages/shared/dist' 
+            : '../../packages/shared/src'
+        ),
+      },
+    },
     plugins: [
       react(),
       suppressProxyErrorsPlugin(),

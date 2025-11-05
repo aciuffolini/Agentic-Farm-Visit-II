@@ -28,20 +28,38 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      # Simple approach: Install at root (handles workspaces automatically)
+      # Install all dependencies at root (workspaces will link packages)
       - name: Install dependencies
         run: |
           echo "=== INSTALLING DEPENDENCIES ==="
           npm install --legacy-peer-deps
           echo "✅ Dependencies installed"
+          echo "Verifying workspace setup..."
+          ls -la packages/shared/ || echo "Shared package not found"
+          ls -la apps/web/ || echo "Web app not found"
 
       # Build shared package first (web app depends on it)
       - name: Build shared package
         run: |
           echo "=== BUILDING SHARED PACKAGE ==="
           cd packages/shared
-          npm run build
+          echo "Current directory: $(pwd)"
+          echo "Building shared package..."
+          npm run build 2>&1 || {
+            echo "❌ Shared package build failed"
+            echo "Checking files..."
+            ls -la
+            cat package.json || echo "No package.json"
+            exit 1
+          }
+          echo "Verifying build output..."
+          if [ ! -d "dist" ]; then
+            echo "❌ dist directory not found"
+            ls -la
+            exit 1
+          fi
           echo "✅ Shared package built"
+          ls -la dist/ | head -5
 
       # Build web app with environment variable
       - name: Build web app
@@ -51,7 +69,20 @@ jobs:
           echo "=== BUILDING WEB APP ==="
           cd apps/web
           echo "VITE_BASE_PATH: ${VITE_BASE_PATH}"
-          npm run build
+          echo "Current directory: $(pwd)"
+          echo "Verifying shared package is built..."
+          if [ ! -f "../../packages/shared/dist/index.js" ]; then
+            echo "❌ Shared package not built!"
+            exit 1
+          fi
+          echo "Running build..."
+          npm run build 2>&1 || {
+            echo "❌ Web app build failed"
+            echo "Checking for common issues..."
+            echo "Shared package dist:"
+            ls -la ../../packages/shared/dist/ || echo "Shared dist not found"
+            exit 1
+          }
           echo "✅ Web app built"
 
       # Verify build output exists
