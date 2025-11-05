@@ -26,58 +26,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      # Install all dependencies at root (workspaces will link packages)
+      # Install at root - npm workspaces will handle everything
       - name: Install dependencies
-        run: |
-          echo "=== INSTALLING DEPENDENCIES ==="
-          npm install --legacy-peer-deps
-          echo "✅ Dependencies installed"
-          echo "Verifying workspace setup..."
-          ls -la packages/shared/ || echo "Shared package not found"
-          ls -la apps/web/ || echo "Web app not found"
+        run: npm install --legacy-peer-deps
 
-      # Note: Shared package doesn't need to be built for Vite
-      # Vite will compile TypeScript directly from src
-      # But we keep this step for type definitions if needed
-      - name: Build shared package (optional, for types)
+      # Build shared package first (web app depends on it)
+      - name: Build shared package
         run: |
-          echo "=== BUILDING SHARED PACKAGE (for type definitions) ==="
           cd packages/shared
-          npm run build || echo "⚠️ Shared package build failed, but continuing (Vite will compile from src)"
-          echo "✅ Shared package step complete"
+          npm run build
 
-      # Build web app with environment variable
-      # Vite handles TypeScript compilation, no need for tsc -b
+      # Build web app
       - name: Build web app
         env:
           VITE_BASE_PATH: /Agentic-Farm-Visit/
         run: |
-          echo "=== BUILDING WEB APP ==="
           cd apps/web
-          echo "VITE_BASE_PATH: ${VITE_BASE_PATH}"
-          echo "Current directory: $(pwd)"
-          echo "Running Vite build (Vite handles TypeScript compilation)..."
-          npm run build 2>&1 || {
-            echo "❌ Web app build failed"
-            echo "Checking workspace setup..."
-            echo "Shared package src:"
-            ls -la ../../packages/shared/src/ || echo "Shared src not found"
-            exit 1
-          }
-          echo "✅ Web app built successfully"
-
-      # Verify build output exists
-      - name: Verify build output
-        run: |
-          if [ ! -d "apps/web/dist" ] || [ ! -f "apps/web/dist/index.html" ]; then
-            echo "❌ Build output verification failed"
-            ls -la apps/web/ || echo "apps/web directory not found"
-            exit 1
-          fi
-          echo "✅ Build output verified"
-          ls -la apps/web/dist/ | head -10
+          npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
