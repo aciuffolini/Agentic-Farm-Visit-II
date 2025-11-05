@@ -21,36 +21,15 @@ Disable service worker for Android builds since Capacitor bundles everything int
 
 ## How to Build Fresh APK
 
-### Step 1: Clean Previous Builds
-```powershell
-cd apps/web
-# Remove old build artifacts
-Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
-Remove-Item -Recurse -Force android/app/src/main/assets/public -ErrorAction SilentlyContinue
-```
+**⚠️ IMPORTANT: Follow the steps in [CLEAN_REBUILD_GUIDE.md](./CLEAN_REBUILD_GUIDE.md) for a complete, step-by-step guide.**
 
-### Step 2: Build for Android (No Service Worker)
-```powershell
-# Build web app without service worker
-npm run build:android
-
-# Sync with Capacitor
-npx cap sync android
-
-# Build APK
-cd android
-.\gradlew.bat clean
-.\gradlew.bat assembleDebug
-```
-
-### Step 3: Install on Device
-```powershell
-# Uninstall old version first (important!)
-adb uninstall com.farmvisit.app
-
-# Install new APK
-adb install app\build\outputs\apk\debug\app-debug.apk
-```
+Quick summary:
+1. **Clean everything** (dist, android assets, build folders)
+2. **Build with `npm run build:android`** (disables service worker)
+3. **Sync Capacitor** (`npx cap sync android`)
+4. **Build APK** (`.\gradlew.bat assembleDebug`)
+5. **Uninstall old app** (`adb uninstall com.farmvisit.app`)
+6. **Install new APK** (`adb install app\build\outputs\apk\debug\app-debug.apk`)
 
 ## Verification
 
