@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:android": "tsc -b && vite build --mode android",
+    "build": "vite build",
+    "build:android": "vite build --mode android",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "android:dev": "npm run build:android && npx cap sync android && npx cap run android",

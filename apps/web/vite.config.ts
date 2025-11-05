@@ -80,12 +80,8 @@ export default defineConfig(({ mode }) => {
     base: basePath,
     resolve: {
       alias: {
-        // Use dist in production (built), src in development
-        '@farm-visit/shared': path.resolve(__dirname, 
-          process.env.NODE_ENV === 'production' 
-            ? '../../packages/shared/dist' 
-            : '../../packages/shared/src'
-        ),
+        // Always point to src - Vite will compile TypeScript
+        '@farm-visit/shared': path.resolve(__dirname, '../../packages/shared/src'),
       },
     },
     plugins: [
