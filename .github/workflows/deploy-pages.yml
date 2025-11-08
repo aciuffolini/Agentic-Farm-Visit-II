@@ -19,77 +19,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      # IDEA 1: Use pnpm instead of npm (better workspace support)
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      # IDEA 2: Build EVERYTHING in ONE monolithic step (no step boundaries)
-      # IDEA 3: Try pnpm first, fallback to npm (covers both)
-      # IDEA 4: Use configure-pages@v5 (newer, better enablement)
-      # IDEA 5: Set NODE_ENV=production explicitly (might fix base path)
-      - name: Install and build everything (monolithic approach)
+      
+      - name: Install and build
+        working-directory: apps/web
         env:
           VITE_BASE_PATH: /Agentic-Farm-Visit/
-          NODE_ENV: production
         run: |
-          set -e  # Exit on any error
-          
-          echo "=== TRYING PNPM FIRST ==="
-          if command -v pnpm &> /dev/null; then
-            echo "Using pnpm..."
-            pnpm install --frozen-lockfile 2>&1 || pnpm install 2>&1 || {
-              echo "pnpm failed, trying npm..."
-              npm install --legacy-peer-deps
-            }
-          else
-            echo "pnpm not available, using npm..."
-            npm install --legacy-peer-deps
-          fi
-          
-          echo "=== BUILDING SHARED PACKAGE ==="
-          cd packages/shared
-          if command -v pnpm &> /dev/null; then
-            pnpm run build || npm run build
-          else
-            npm run build
-          fi
-          [ -d "dist" ] || { echo "ERROR: shared dist not created"; exit 1; }
-          cd ../..
-          
-          echo "=== BUILDING WEB APP ==="
-          cd apps/web
-          if command -v pnpm &> /dev/null; then
-            pnpm run build || npm run build
-          else
-            npm run build
-          fi
-          [ -d "dist" ] || { echo "ERROR: web dist not created"; exit 1; }
-          [ -f "dist/index.html" ] || { echo "ERROR: index.html missing"; exit 1; }
-          cd ../..
-          
-          echo "✅ ALL BUILDS COMPLETE"
-          ls -la apps/web/dist/ | head -10
-
-      # IDEA 4: Use v5 (newer version)
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+          npm install --legacy-peer-deps
+          cd ../../packages/shared && npm install && npm run build && cd ../../apps/web
+          npm run build
+      
+      - uses: actions/configure-pages@v4
         with:
           enablement: true
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      
+      - uses: actions/upload-pages-artifact@v3
         with:
-          path: 'apps/web/dist'
+          path: apps/web/dist
 
   deploy:
     environment:
@@ -101,6 +52,5 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - name: Deploy to GitHub Pages
+      - uses: actions/deploy-pages@v4
         id: deployment
-        uses: actions/deploy-pages@v4
