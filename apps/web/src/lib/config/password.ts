@@ -42,7 +42,8 @@ async function getStoredHash(): Promise<string> {
   // Fallback: Calculate hash from default password
   // This allows the app to work without configuration, but password is visible in code
   // In production, set VITE_APP_PASSWORD_HASH in .env file
-  const defaultPassword = import.meta.env.VITE_APP_PASSWORD || 'Fotheringham933@';
+  // Android version requires: Fotheringham933@
+  const defaultPassword = 'Fotheringham933@';
   return await hashPassword(defaultPassword);
 }
 
