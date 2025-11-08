@@ -151,6 +151,33 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         let fallbackMessage = "I'm here! How can I help you with your field visit?\n\n";
         
         if (stats.provider === 'none') {
+          // Check if we're online and have API key
+          const hasKey = getUserApiKey();
+          const isOnline = navigator.onLine;
+          
+          if (!isOnline) {
+            fallbackMessage += "⚠️ **Device is offline**\n\n";
+            fallbackMessage += "Available offline options:\n";
+            fallbackMessage += "• Android 14+ with AICore → Gemini Nano\n";
+            fallbackMessage += "• Any Android 7+ → Llama Local (download model)\n\n";
+            fallbackMessage += "**Note**: Cloud API requires internet connection.";
+          } else if (!hasKey) {
+            fallbackMessage += "⚠️ **API key not configured**\n\n";
+            fallbackMessage += "To use Cloud API:\n";
+            fallbackMessage += "1. Click **🔑 Set API Key** button above\n";
+            fallbackMessage += "2. Enter your OpenAI or Anthropic API key\n";
+            fallbackMessage += "3. Start chatting!\n\n";
+            fallbackMessage += "**Alternative**: Use offline models on Android devices.";
+          } else {
+            // Online with key but still failed - might be server issue
+            fallbackMessage += "⚠️ **Connection issue**\n\n";
+            fallbackMessage += "The API server might not be running.\n\n";
+            fallbackMessage += "**For local development:**\n";
+            fallbackMessage += "1. Start the test server: `node apps/web/test-server.js`\n";
+            fallbackMessage += "2. Or use the script: `apps/web/start-both.bat`\n\n";
+            fallbackMessage += "**For production:** Check if the API endpoint is accessible.";
+          }
+        } else {
           fallbackMessage += "Note: AI model is initializing. This may take a moment on first use.\n\n";
           fallbackMessage += "Available options:\n";
           fallbackMessage += "• Android 14+ with AICore → Gemini Nano\n";

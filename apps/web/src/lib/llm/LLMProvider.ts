@@ -594,9 +594,11 @@ export class LLMProvider {
     // Auto mode: Try fallback order (original behavior)
     // Priority 1: Try Gemini Nano (offline, best quality, multimodal)
     // NOTE: Gemini Nano only works on Android 14+ devices with AICore
+    // REFACTORED: Skip Nano check on web immediately to avoid unnecessary async calls
     try {
       const { Capacitor } = await import('@capacitor/core');
-      // Skip Gemini Nano on web - use Cloud API instead
+      // Skip Gemini Nano on web - go directly to Cloud API or Llama
+      // This prevents unnecessary async calls and improves web performance
       if (Capacitor.isNativePlatform()) {
         const available = await geminiNano.isAvailable();
         if (available) {
@@ -640,6 +642,9 @@ export class LLMProvider {
           });
           return;
         }
+      } else {
+        // On web, skip Nano check entirely - go to next priority
+        console.log('[LLMProvider] Web platform detected - skipping Gemini Nano, trying Llama or Cloud API');
       }
     } catch (err: any) {
       console.warn('[LLMProvider] Gemini Nano failed, trying fallback:', err.message);

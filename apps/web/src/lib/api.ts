@@ -60,11 +60,25 @@ export async function* streamChat(
   console.log('[API] Request headers:', { ...headers, 'X-API-Key': headers['X-API-Key'] ? `${headers['X-API-Key'].substring(0, 10)}...` : 'NOT SET' });
   console.log('[API] Request body:', { messages: messages.length, meta });
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ messages, meta }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ messages, meta }),
+    });
+  } catch (fetchError: any) {
+    // Handle network errors (ECONNREFUSED, network failures, etc.)
+    const errorMsg = fetchError?.message || String(fetchError);
+    if (errorMsg.includes('ECONNREFUSED') || 
+        errorMsg.includes('Failed to fetch') ||
+        errorMsg.includes('NetworkError') ||
+        errorMsg.includes('ERR_CONNECTION_REFUSED') ||
+        fetchError?.name === 'TypeError') {
+      throw new Error(`Cannot connect to API server. Please ensure the test server is running on port 3000. Start with: node test-server.js`);
+    }
+    throw new Error(`Network error: ${errorMsg}`);
+  }
   
   console.log('[API] Response status:', response.status, response.statusText);
   console.log('[API] Response headers:', Object.fromEntries(response.headers.entries()));
