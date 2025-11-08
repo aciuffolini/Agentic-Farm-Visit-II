@@ -8,6 +8,21 @@ import { getUserApiKey } from './config/userKey';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+/**
+ * Check if the test server is running
+ */
+export async function checkServerHealth(): Promise<boolean> {
+  try {
+    const response = await fetch('/api/health', {
+      method: 'GET',
+      signal: AbortSignal.timeout(2000), // 2 second timeout
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export interface ChatRequest {
   messages: ChatMessage[];
   meta?: {
