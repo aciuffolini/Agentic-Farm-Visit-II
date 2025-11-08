@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChatMessage } from '@farm-visit/shared';
 import { llmProvider, ModelOption } from '../lib/llm/LLMProvider';
 import { getUserApiKey, setUserApiKey } from '../lib/config/userKey';
+import { checkServerHealth } from '../lib/api';
 
 interface ChatDrawerProps {
   open: boolean;
