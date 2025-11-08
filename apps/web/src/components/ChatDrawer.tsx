@@ -203,28 +203,29 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
       const stats = llmProvider.getStats();
       const hasApiKey = getUserApiKey();
       
-      // Check if it's a server connection error (ECONNREFUSED, Cannot connect to server)
+      // Check if it's a server connection error or API unavailable
       if (err.message?.includes('ECONNREFUSED') || 
           err.message?.includes('Cannot connect to server') ||
           err.message?.includes('Connection refused') ||
           err.message?.includes('connect ECONNREFUSED') ||
           err.message?.includes('Failed to fetch') ||
+          err.message?.includes('API server unavailable') ||
+          err.message?.includes('Test server is not running') ||
           (err.message?.includes('fetch') && err.message?.includes('ERR_CONNECTION_REFUSED'))) {
-        errorMessage = '⚠️ **Server Connection Error**\n\n';
-        errorMessage += 'Cannot connect to the test server. Please check:\n\n';
-        errorMessage += '1. **Is the server running?**\n';
-        errorMessage += '   Run: `node test-server.js` in a separate terminal\n';
-        errorMessage += '   Expected output: "✅ Test Server Running"\n\n';
-        errorMessage += '2. **Verify server is working:**\n';
-        errorMessage += '   Open: http://localhost:3000/health\n';
-        errorMessage += '   Should return: `{"ok":true,"message":"Test server running"}`\n\n';
-        errorMessage += '3. **Set your API key** using the 🔑 button above\n';
-        errorMessage += '4. **Try again** after the server is running\n\n';
-        
-        // Automatically show API key input if not shown
-        if (!showApiKeyInput) {
-          setTimeout(() => setShowApiKeyInput(true), 500);
-        }
+        errorMessage = '⚠️ **Test Server Not Running**\n\n';
+        errorMessage += 'The API server needs to be running for Cloud API models.\n\n';
+        errorMessage += '**Quick Fix:**\n';
+        errorMessage += '1. Open a new terminal/command prompt\n';
+        errorMessage += '2. Navigate to: `apps/web` folder\n';
+        errorMessage += '3. Run: `node test-server.js`\n';
+        errorMessage += '4. Wait for: "✅ Test Server Running"\n';
+        errorMessage += '5. Try chatting again!\n\n';
+        errorMessage += '**Or use the script:**\n';
+        errorMessage += '- Double-click: `apps/web/start-both.bat`\n';
+        errorMessage += '- This starts both dev server and test server\n\n';
+        errorMessage += '**Verify server is running:**\n';
+        errorMessage += '- Open: http://localhost:3000/health\n';
+        errorMessage += '- Should show: `{"ok":true,"message":"Test server running"}`';
       } 
       // Check if it's a Cloud API authentication error
       else if (err.message?.includes('401') || err.message?.includes('unauthorized') || 
