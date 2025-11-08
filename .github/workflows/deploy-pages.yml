@@ -27,49 +27,60 @@ jobs:
         with:
           node-version: '20'
 
-      # IDEA 1: Use pnpm instead of npm (faster, better workspace support)
+      # IDEA 1: Use pnpm instead of npm (better workspace support)
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      # IDEA 2: Install and build EVERYTHING in one step (no separate steps)
-      - name: Install, build shared, and build web (all in one)
+      # IDEA 2: Build EVERYTHING in ONE monolithic step (no step boundaries)
+      # IDEA 3: Try pnpm first, fallback to npm (covers both)
+      # IDEA 4: Use configure-pages@v5 (newer, better enablement)
+      # IDEA 5: Set NODE_ENV=production explicitly (might fix base path)
+      - name: Install and build everything (monolithic approach)
         env:
           VITE_BASE_PATH: /Agentic-Farm-Visit/
+          NODE_ENV: production
         run: |
-          echo "=== INSTALLING WITH PNPM ==="
-          pnpm install --frozen-lockfile || pnpm install || npm install --legacy-peer-deps
+          set -e  # Exit on any error
           
-          echo "=== BUILDING SHARED ==="
+          echo "=== TRYING PNPM FIRST ==="
+          if command -v pnpm &> /dev/null; then
+            echo "Using pnpm..."
+            pnpm install --frozen-lockfile 2>&1 || pnpm install 2>&1 || {
+              echo "pnpm failed, trying npm..."
+              npm install --legacy-peer-deps
+            }
+          else
+            echo "pnpm not available, using npm..."
+            npm install --legacy-peer-deps
+          fi
+          
+          echo "=== BUILDING SHARED PACKAGE ==="
           cd packages/shared
-          pnpm run build || npm run build
+          if command -v pnpm &> /dev/null; then
+            pnpm run build || npm run build
+          else
+            npm run build
+          fi
+          [ -d "dist" ] || { echo "ERROR: shared dist not created"; exit 1; }
           cd ../..
           
-          echo "=== BUILDING WEB ==="
+          echo "=== BUILDING WEB APP ==="
           cd apps/web
-          pnpm run build || npm run build
+          if command -v pnpm &> /dev/null; then
+            pnpm run build || npm run build
+          else
+            npm run build
+          fi
+          [ -d "dist" ] || { echo "ERROR: web dist not created"; exit 1; }
+          [ -f "dist/index.html" ] || { echo "ERROR: index.html missing"; exit 1; }
           cd ../..
           
-          echo "=== VERIFYING OUTPUT ==="
-          ls -la apps/web/dist/ || exit 1
-          [ -f "apps/web/dist/index.html" ] || exit 1
-          echo "✅ Build complete"
+          echo "✅ ALL BUILDS COMPLETE"
+          ls -la apps/web/dist/ | head -10
 
-      # IDEA 3: Use v5 of configure-pages (newer, might support enablement better)
+      # IDEA 4: Use v5 (newer version)
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
