@@ -30,23 +30,61 @@ jobs:
       # Install ALL dependencies at root - npm workspaces handles everything
       - name: Install all dependencies
         run: |
-          npm install --legacy-peer-deps
+          echo "=== INSTALLING DEPENDENCIES ==="
+          npm install --legacy-peer-deps 2>&1 | tee install.log || {
+            echo "❌ Install failed"
+            echo "Last 50 lines:"
+            tail -50 install.log
+            exit 1
+          }
           echo "✅ Dependencies installed"
+          echo "Verifying workspace setup..."
+          ls -la node_modules/@farm-visit/ 2>/dev/null || echo "Workspace packages not linked yet (will be after build)"
 
       # Build shared package using workspace command
       - name: Build shared package
         run: |
-          npm run build:shared
-          [ -d "packages/shared/dist" ] || { echo "ERROR: shared dist not found"; exit 1; }
+          echo "=== BUILDING SHARED PACKAGE ==="
+          npm run build:shared 2>&1 | tee shared-build.log || {
+            echo "❌ Shared build failed"
+            echo "Error log:"
+            tail -100 shared-build.log
+            exit 1
+          }
+          [ -d "packages/shared/dist" ] || { 
+            echo "ERROR: shared dist not found after build"
+            echo "packages/shared contents:"
+            ls -la packages/shared/
+            exit 1
+          }
+          echo "✅ Shared package built"
 
       # Build web app using workspace command with env var
       - name: Build web app
         env:
           VITE_BASE_PATH: /Agentic-Farm-Visit/
         run: |
-          npm run build:web
-          [ -d "apps/web/dist" ] || { echo "ERROR: web dist not found"; exit 1; }
-          [ -f "apps/web/dist/index.html" ] || { echo "ERROR: index.html not found"; exit 1; }
+          echo "=== BUILDING WEB APP ==="
+          echo "VITE_BASE_PATH: ${VITE_BASE_PATH}"
+          npm run build:web 2>&1 | tee web-build.log || {
+            echo "❌ Web build failed"
+            echo "Error log:"
+            tail -100 web-build.log
+            echo "Checking shared package:"
+            ls -la packages/shared/dist/ || echo "Shared dist missing!"
+            exit 1
+          }
+          [ -d "apps/web/dist" ] || { 
+            echo "ERROR: web dist not found"
+            ls -la apps/web/
+            exit 1
+          }
+          [ -f "apps/web/dist/index.html" ] || { 
+            echo "ERROR: index.html not found"
+            ls -la apps/web/dist/
+            exit 1
+          }
+          echo "✅ Web app built successfully"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
