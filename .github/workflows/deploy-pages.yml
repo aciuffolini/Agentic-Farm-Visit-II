@@ -27,67 +27,51 @@ jobs:
         with:
           node-version: '20'
 
-      # Install ALL dependencies at root - npm workspaces handles everything
-      - name: Install all dependencies
-        run: |
-          echo "=== INSTALLING DEPENDENCIES ==="
-          npm install --legacy-peer-deps 2>&1 | tee install.log || {
-            echo "❌ Install failed"
-            echo "Last 50 lines:"
-            tail -50 install.log
-            exit 1
-          }
-          echo "✅ Dependencies installed"
-          echo "Verifying workspace setup..."
-          ls -la node_modules/@farm-visit/ 2>/dev/null || echo "Workspace packages not linked yet (will be after build)"
+      # IDEA 1: Use pnpm instead of npm (faster, better workspace support)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
 
-      # Build shared package using workspace command
-      - name: Build shared package
+      - name: Get pnpm store directory
+        shell: bash
         run: |
-          echo "=== BUILDING SHARED PACKAGE ==="
-          npm run build:shared 2>&1 | tee shared-build.log || {
-            echo "❌ Shared build failed"
-            echo "Error log:"
-            tail -100 shared-build.log
-            exit 1
-          }
-          [ -d "packages/shared/dist" ] || { 
-            echo "ERROR: shared dist not found after build"
-            echo "packages/shared contents:"
-            ls -la packages/shared/
-            exit 1
-          }
-          echo "✅ Shared package built"
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      # Build web app using workspace command with env var
-      - name: Build web app
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      # IDEA 2: Install and build EVERYTHING in one step (no separate steps)
+      - name: Install, build shared, and build web (all in one)
         env:
           VITE_BASE_PATH: /Agentic-Farm-Visit/
         run: |
-          echo "=== BUILDING WEB APP ==="
-          echo "VITE_BASE_PATH: ${VITE_BASE_PATH}"
-          npm run build:web 2>&1 | tee web-build.log || {
-            echo "❌ Web build failed"
-            echo "Error log:"
-            tail -100 web-build.log
-            echo "Checking shared package:"
-            ls -la packages/shared/dist/ || echo "Shared dist missing!"
-            exit 1
-          }
-          [ -d "apps/web/dist" ] || { 
-            echo "ERROR: web dist not found"
-            ls -la apps/web/
-            exit 1
-          }
-          [ -f "apps/web/dist/index.html" ] || { 
-            echo "ERROR: index.html not found"
-            ls -la apps/web/dist/
-            exit 1
-          }
-          echo "✅ Web app built successfully"
+          echo "=== INSTALLING WITH PNPM ==="
+          pnpm install --frozen-lockfile || pnpm install || npm install --legacy-peer-deps
+          
+          echo "=== BUILDING SHARED ==="
+          cd packages/shared
+          pnpm run build || npm run build
+          cd ../..
+          
+          echo "=== BUILDING WEB ==="
+          cd apps/web
+          pnpm run build || npm run build
+          cd ../..
+          
+          echo "=== VERIFYING OUTPUT ==="
+          ls -la apps/web/dist/ || exit 1
+          [ -f "apps/web/dist/index.html" ] || exit 1
+          echo "✅ Build complete"
 
+      # IDEA 3: Use v5 of configure-pages (newer, might support enablement better)
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
         with:
           enablement: true
 
