@@ -81,16 +81,29 @@ export async function* streamChat(
       method: 'POST',
       headers,
       body: JSON.stringify({ messages, meta }),
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(30000), // 30 second timeout
     });
   } catch (fetchError: any) {
     // Handle network errors (ECONNREFUSED, network failures, etc.)
     const errorMsg = fetchError?.message || String(fetchError);
+    const errorName = fetchError?.name || '';
+    
+    // Check for connection refused errors
     if (errorMsg.includes('ECONNREFUSED') || 
         errorMsg.includes('Failed to fetch') ||
         errorMsg.includes('NetworkError') ||
         errorMsg.includes('ERR_CONNECTION_REFUSED') ||
-        fetchError?.name === 'TypeError') {
-      throw new Error(`Cannot connect to API server. Please ensure the test server is running on port 3000. Start with: node test-server.js`);
+        errorMsg.includes('AbortError') ||
+        errorName === 'TypeError' ||
+        errorName === 'AbortError') {
+      
+      // More specific error message
+      if (errorMsg.includes('AbortError') || errorName === 'AbortError') {
+        throw new Error('Request timeout. The server may not be running or is taking too long to respond. Start the test server with: node test-server.js');
+      }
+      
+      throw new Error('Cannot connect to API server. The test server is not running. Start it with: node test-server.js in the apps/web folder');
     }
     throw new Error(`Network error: ${errorMsg}`);
   }

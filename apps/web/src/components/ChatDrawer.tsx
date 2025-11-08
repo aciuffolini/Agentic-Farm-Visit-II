@@ -119,30 +119,46 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
       // Priority: Gemini Nano (offline) → Llama Local (offline) → Cloud API (online)
       // Or use selected model if user chose one
       let hasResponse = false;
-      const generator = llmProvider.stream({
-        text: userInput,
-        location: visitContext?.gps 
-          ? { lat: visitContext.gps.lat, lon: visitContext.gps.lon }
-          : undefined,
-        model: selectedModel, // Pass selected model (or 'auto' for fallback)
-        visitContext: structuredVisit, // Pass structured visit data
-      });
-
-      // Show which provider is being used
-      const stats = llmProvider.getStats();
-      console.log('[ChatDrawer] Using provider:', stats.provider);
-
-      for await (const chunk of generator) {
-        hasResponse = true;
-        console.log('[ChatDrawer] Received chunk:', chunk);
-        setMessages((m) => {
-          const copy = [...m];
-          const last = copy[copy.length - 1];
-          if (last && last.role === 'assistant') {
-            copy[copy.length - 1] = { ...last, content: last.content + chunk };
-          }
-          return copy;
+      let generatorError: Error | null = null;
+      
+      try {
+        const generator = llmProvider.stream({
+          text: userInput,
+          location: visitContext?.gps 
+            ? { lat: visitContext.gps.lat, lon: visitContext.gps.lon }
+            : undefined,
+          model: selectedModel, // Pass selected model (or 'auto' for fallback)
+          visitContext: structuredVisit, // Pass structured visit data
         });
+
+        // Show which provider is being used
+        const stats = llmProvider.getStats();
+        console.log('[ChatDrawer] Using provider:', stats.provider);
+
+        try {
+          for await (const chunk of generator) {
+            hasResponse = true;
+            console.log('[ChatDrawer] Received chunk:', chunk);
+            setMessages((m) => {
+              const copy = [...m];
+              const last = copy[copy.length - 1];
+              if (last && last.role === 'assistant') {
+                copy[copy.length - 1] = { ...last, content: last.content + chunk };
+              }
+              return copy;
+            });
+          }
+        } catch (genError: any) {
+          // Catch errors from the generator itself
+          generatorError = genError;
+          console.error('[ChatDrawer] Generator error:', genError);
+          throw genError; // Re-throw to be caught by outer catch
+        }
+      } catch (streamError: any) {
+        // Catch errors from creating the generator
+        generatorError = streamError;
+        console.error('[ChatDrawer] Stream creation error:', streamError);
+        throw streamError; // Re-throw to be caught by outer catch
       }
 
       // If no response was generated, show a helpful fallback message
