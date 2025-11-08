@@ -22,10 +22,10 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   
   const initialMessage = useMemo(() => {
     const hasKey = getUserApiKey();
-    if (!hasKey && navigator.onLine) {
+    if (!hasKey) {
       return {
         role: 'assistant' as const,
-        content: '👋 Hi! Set your API key using the 🔑 button to start chatting.'
+        content: '👋 Hi! This app uses **Cloud AI only** (no local models).\n\nTo start chatting:\n1. Click the 🔑 button above\n2. Enter your OpenAI or Anthropic API key\n3. Start chatting!\n\n**Note:** Requires internet connection and API key.'
       };
     }
     return {
