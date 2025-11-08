@@ -98,6 +98,25 @@ jobs:
           echo "Key files:"
           ls -lh apps/web/dist/ | head -10
       
+      # FIX #6: Verify base path is correctly set
+      - name: Verify base path
+        run: |
+          echo "=== VERIFYING BASE PATH ==="
+          if ! grep -q "/Agentic-Farm-Visit/" apps/web/dist/index.html; then
+            echo "❌ ERROR: Base path '/Agentic-Farm-Visit/' not found in index.html"
+            echo "First 20 lines of index.html:"
+            head -20 apps/web/dist/index.html
+            exit 1
+          fi
+          echo "✅ Base path verified in HTML"
+          # Also check build size is reasonable (at least 1MB)
+          SIZE=$(du -sm apps/web/dist | cut -f1)
+          if [ "$SIZE" -lt 1 ]; then
+            echo "⚠️  WARNING: Build size is very small ($SIZE MB), may indicate build failure"
+          else
+            echo "✅ Build size: $SIZE MB (reasonable)"
+          fi
+      
       # Configure GitHub Pages (with enablement)
       - name: Setup Pages
         uses: actions/configure-pages@v4
