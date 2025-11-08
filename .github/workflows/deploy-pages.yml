@@ -27,51 +27,26 @@ jobs:
         with:
           node-version: '20'
 
-      # Verify structure exists
-      - name: Verify repository structure
+      # Install ALL dependencies at root - npm workspaces handles everything
+      - name: Install all dependencies
         run: |
-          echo "Checking repository structure..."
-          ls -la
-          [ -d "packages/shared" ] || { echo "ERROR: packages/shared not found"; exit 1; }
-          [ -d "apps/web" ] || { echo "ERROR: apps/web not found"; exit 1; }
-          [ -f "packages/shared/package.json" ] || { echo "ERROR: packages/shared/package.json not found"; exit 1; }
-          [ -f "apps/web/package.json" ] || { echo "ERROR: apps/web/package.json not found"; exit 1; }
-          echo "✅ Repository structure verified"
+          npm install --legacy-peer-deps
+          echo "✅ Dependencies installed"
 
-      # Install shared package - use npm ci if lockfile exists, else npm install
-      - name: Install shared package dependencies
-        run: |
-          cd packages/shared
-          if [ -f "package-lock.json" ]; then
-            npm ci
-          else
-            npm install
-          fi
-
-      # Build shared package
+      # Build shared package using workspace command
       - name: Build shared package
         run: |
-          cd packages/shared
-          npm run build
-          [ -d "dist" ] || { echo "ERROR: dist directory not created"; exit 1; }
+          npm run build:shared
+          [ -d "packages/shared/dist" ] || { echo "ERROR: shared dist not found"; exit 1; }
 
-      # Install web app - remove workspace dependency first
-      - name: Install web app dependencies
-        run: |
-          cd apps/web
-          # Temporarily remove workspace dependency for CI
-          node -e "const pkg = require('./package.json'); delete pkg.dependencies['@farm-visit/shared']; require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2));"
-          npm install --legacy-peer-deps
-
-      # Build web app (Vite alias handles @farm-visit/shared)
+      # Build web app using workspace command with env var
       - name: Build web app
         env:
           VITE_BASE_PATH: /Agentic-Farm-Visit/
         run: |
-          cd apps/web
-          npm run build
-          [ -d "dist" ] || { echo "ERROR: dist directory not created"; exit 1; }
-          [ -f "dist/index.html" ] || { echo "ERROR: dist/index.html not found"; exit 1; }
+          npm run build:web
+          [ -d "apps/web/dist" ] || { echo "ERROR: web dist not found"; exit 1; }
+          [ -f "apps/web/dist/index.html" ] || { echo "ERROR: index.html not found"; exit 1; }
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
