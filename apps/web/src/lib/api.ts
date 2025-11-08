@@ -99,8 +99,28 @@ export async function* streamChat(
   console.log('[API] Response headers:', Object.fromEntries(response.headers.entries()));
 
   if (!response.ok) {
+    // Handle 503 (Service Unavailable) - server not running
+    if (response.status === 503) {
+      try {
+        const errorData = await response.json();
+        throw new Error(`API server unavailable: ${errorData.message || 'Test server is not running. Start it with: node test-server.js'}`);
+      } catch {
+        throw new Error('API server unavailable. Test server is not running. Start it with: node test-server.js');
+      }
+    }
+    
     const text = await response.text();
-    throw new Error(`Chat API error: ${response.status} ${text}`);
+    let errorMessage = `Chat API error: ${response.status}`;
+    
+    // Try to parse error message
+    try {
+      const errorData = JSON.parse(text);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch {
+      if (text) errorMessage += ` ${text}`;
+    }
+    
+    throw new Error(errorMessage);
   }
 
   if (!response.body) {

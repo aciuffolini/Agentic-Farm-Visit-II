@@ -75,35 +75,6 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   const send = async () => {
     if (!input.trim() || busy) return;
 
-    // Check if server is running (for Cloud API models)
-    if (selectedModel === 'gpt-4o-mini' || selectedModel === 'claude-code' || selectedModel === 'auto') {
-      const isServerRunning = await checkServerHealth();
-      if (!isServerRunning && navigator.onLine) {
-        const hasKey = getUserApiKey();
-        if (hasKey) {
-          // Server not running but user has API key
-          setMessages((m) => [...m, { 
-            role: 'assistant', 
-            content: '⚠️ **Test Server Not Running**\n\n' +
-                     'The API server needs to be running for Cloud API models.\n\n' +
-                     '**Quick Fix:**\n' +
-                     '1. Open a new terminal/command prompt\n' +
-                     '2. Navigate to: `apps/web` folder\n' +
-                     '3. Run: `node test-server.js`\n' +
-                     '4. Wait for: "✅ Test Server Running"\n' +
-                     '5. Try chatting again!\n\n' +
-                     '**Or use the script:**\n' +
-                     '- Double-click: `apps/web/start-both.bat`\n' +
-                     '- This starts both dev server and test server\n\n' +
-                     '**Verify server is running:**\n' +
-                     '- Open: http://localhost:3000/health\n' +
-                     '- Should show: `{"ok":true,"message":"Test server running"}`'
-          }]);
-          return;
-        }
-      }
-    }
-
     const userMsg: ChatMessage = { role: 'user', content: input.trim() };
     setMessages((m) => [...m, userMsg]);
     const userInput = input.trim();
