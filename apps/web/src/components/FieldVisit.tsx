@@ -56,7 +56,37 @@ export function FieldVisit() {
         present: true,
         url: audioUrl, // dataURL for local access
       } : null,
-      // Include latest saved visit record if available
+      // Include KMZ/KML farm map data (farm boundaries, field definitions)
+      kmzData: kmzData ? {
+        placemarks: kmzData.placemarks.map(p => ({
+          name: p.name,
+          type: p.type,
+          coordinates: p.coordinates, // Array of {lat, lon, alt?}
+        })),
+        bounds: kmzData.bounds,
+      } : null,
+      // Include ALL saved visit records (full table history) for LLM access
+      // IMPORTANT: Include photo_data and audio_data directly from database for LLM access
+      allVisits: records.length > 0 ? records.map(record => ({
+        id: record.id,
+        field_id: record.field_id,
+        crop: record.crop,
+        issue: record.issue,
+        severity: record.severity,
+        note: record.note,
+        ts: record.ts,
+        lat: record.lat,
+        lon: record.lon,
+        acc: record.acc,
+        // Pass photo_data directly (already in data URL format from database)
+        photo_data: record.photo_data 
+          ? (record.photo_data.startsWith('data:') 
+              ? record.photo_data 
+              : `data:image/jpeg;base64,${record.photo_data}`)
+          : undefined,
+        audio_data: record.audio_data || undefined,
+      })) : [],
+      // Also include latest visit for backward compatibility
       latestVisit: records.length > 0 ? {
         id: records[0].id,
         field_id: records[0].field_id,
@@ -64,16 +94,27 @@ export function FieldVisit() {
         issue: records[0].issue,
         severity: records[0].severity,
         ts: records[0].ts,
-        photo_url: records[0].photo_data ? `data:image/jpeg;base64,${records[0].photo_data.split(',')[1]}` : undefined,
-        audio_url: records[0].audio_data || undefined,
+        photo_data: records[0].photo_data 
+          ? (records[0].photo_data.startsWith('data:') 
+              ? records[0].photo_data 
+              : `data:image/jpeg;base64,${records[0].photo_data}`)
+          : undefined,
+        audio_data: records[0].audio_data || undefined,
       } : null,
       ts: Date.now(),
     };
     (window as any).__VISIT_CONTEXT__ = visitContext;
     
+    // Debug: Log visit context version
+    if (records.length > 0) {
+      console.log('[FieldVisit] Visit context updated - Total visits:', records.length);
+      console.log('[FieldVisit] Latest visit ID:', records[0].id);
+      console.log('[FieldVisit] Full visit history available:', records.length > 0);
+    }
+    
     // Broadcast context update to swarm
     agentMessaging.broadcast("visit_context_updated", visitContext);
-  }, [gps, note, photo, audioUrl, records]);
+  }, [gps, note, photo, audioUrl, records, kmzData]);
 
   // Load records on mount
   useEffect(() => {
@@ -192,12 +233,17 @@ export function FieldVisit() {
       };
 
       // Save to local DB first (optimistic)
+      // IMPORTANT: Save photo and audio as full data URLs for LLM access
       await visitDB.insert({
         ...visit,
-        photo_data: photo || undefined,
-        audio_data: audioUrl || undefined,
+        // Ensure photo is saved as full data URL (it should already be from camera capture)
+        photo_data: photo ? (photo.startsWith('data:') ? photo : `data:image/jpeg;base64,${photo}`) : undefined,
+        // Ensure audio is saved as full data URL (it should already be from microphone)
+        audio_data: audioUrl ? (audioUrl.startsWith('data:') ? audioUrl : `data:audio/webm;base64,${audioUrl}`) : undefined,
         synced: false,
       });
+      
+      console.log('[FieldVisit] Saved visit with photo:', photo ? 'Yes (' + photo.length + ' chars)' : 'No');
 
       // Try to sync to server
       try {
@@ -213,15 +259,22 @@ export function FieldVisit() {
         console.log('Queued for offline sync');
       }
 
-      // Reload records
+      // Reload records (this will update latestVisit with saved photo_data)
       await loadRecords();
       setAskOpen(false);
       
-      // Clear capture
+      // IMPORTANT: Don't clear photo/audio immediately - they're needed for chat analysis
+      // The photo is saved to database and will be available via latestVisit.photo_data
+      // But keep current photo state visible for immediate chat access
+      // Only clear if user explicitly starts a new capture
+      
+      // Clear note and fields to reset form
       setNote('');
-      clearPhoto();
-      clearAudio();
       setFields(null);
+      
+      // Note: Photo and audio remain in state until next capture or explicit clear
+      // This allows immediate chat analysis after saving
+      console.log('[FieldVisit] Visit saved. Photo remains available for chat analysis.');
     } catch (err) {
       console.error('Save error:', err);
       alert('Failed to save visit. Check console for details.');

@@ -336,6 +336,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                 <option value="auto">🤖 Auto (Best Available)</option>
                 <option value="nano">📱 Nano (Offline)</option>
                 <option value="gpt-4o-mini">☁️ ChatGPT 4o mini</option>
+                <option value="claude-code">🤖 Claude Code</option>
                 <option value="llama-small">🦙 Llama Small (Offline)</option>
               </select>
               <button 

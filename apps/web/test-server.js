@@ -13,7 +13,7 @@ const server = http.createServer(async (req, res) => {
   // CORS headers (properly configured to avoid browser warnings)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key, X-Provider, X-Model');
   res.setHeader('Access-Control-Allow-Credentials', 'false');
   res.setHeader('X-Content-Type-Options', 'nosniff');
 
@@ -86,30 +86,46 @@ const server = http.createServer(async (req, res) => {
         const parsed = JSON.parse(body);
         const { messages } = parsed;
         const apiKey = req.headers['x-api-key'] || req.headers['X-API-Key'];
+        const provider = req.headers['x-provider'] || req.headers['X-Provider'] || 'openai';
 
         console.log('\n📨 Chat Request Received');
         console.log('   Messages:', messages?.length || 0);
+        console.log('   Provider:', provider);
         console.log('   API Key:', apiKey ? `${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}` : '❌ NOT PROVIDED');
 
         if (!apiKey) {
           res.writeHead(401, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ 
             error: 'API key required',
-            message: 'Set X-API-Key header with your OpenAI API key' 
+            message: `Set X-API-Key header with your ${provider === 'claude-code' ? 'Anthropic' : 'OpenAI'} API key` 
           }));
           console.log('   ❌ Rejected: No API key\n');
           return;
         }
 
-        // Validate API key format
-        if (!apiKey.startsWith('sk-')) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ 
-            error: 'Invalid API key format',
-            message: 'API key should start with "sk-"' 
-          }));
-          console.log('   ❌ Rejected: Invalid key format\n');
-          return;
+        // Validate API key format based on provider
+        if (provider === 'claude-code') {
+          // Anthropic API keys start with 'sk-ant-'
+          if (!apiKey.startsWith('sk-ant-')) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+              error: 'Invalid API key format',
+              message: 'Anthropic API key should start with "sk-ant-"' 
+            }));
+            console.log('   ❌ Rejected: Invalid Anthropic key format\n');
+            return;
+          }
+        } else {
+          // OpenAI API keys start with 'sk-'
+          if (!apiKey.startsWith('sk-')) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+              error: 'Invalid API key format',
+              message: 'OpenAI API key should start with "sk-"' 
+            }));
+            console.log('   ❌ Rejected: Invalid OpenAI key format\n');
+            return;
+          }
         }
 
         // Set SSE headers
@@ -119,6 +135,101 @@ const server = http.createServer(async (req, res) => {
           'Connection': 'keep-alive',
         });
 
+        // Route to appropriate provider
+        if (provider === 'claude-code') {
+          console.log('   ✅ Calling Anthropic API...');
+          
+          try {
+            // Anthropic API format
+            const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: {
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'claude-3-5-sonnet-20241022', // Claude Code model
+                max_tokens: 4096,
+                messages: messages,
+                stream: true,
+              }),
+            });
+
+            if (!anthropicRes.ok) {
+              const errorText = await anthropicRes.text();
+              console.log('   ❌ Anthropic Error:', anthropicRes.status, errorText.substring(0, 100));
+              res.write(`data: ${JSON.stringify({ error: errorText, status: anthropicRes.status })}\n\n`);
+              res.end();
+              return;
+            }
+
+            console.log('   ✅ Streaming response...');
+
+            // Stream Anthropic response (SSE format)
+            const reader = anthropicRes.body.getReader();
+            const decoder = new TextDecoder();
+            let chunkCount = 0;
+            let buffer = '';
+
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) {
+                res.write('data: [DONE]\n\n');
+                res.end();
+                console.log(`   ✅ Stream complete (${chunkCount} chunks)\n`);
+                break;
+              }
+              
+              chunkCount++;
+              buffer += decoder.decode(value, { stream: true });
+              
+              // Process SSE lines
+              const lines = buffer.split(/\r?\n/);
+              buffer = lines.pop() || '';
+              
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6).trim();
+                  if (data === '[DONE]') {
+                    res.write('data: [DONE]\n\n');
+                    res.end();
+                    console.log(`   ✅ Stream complete (${chunkCount} chunks)\n`);
+                    return;
+                  }
+                  
+                  try {
+                    const parsed = JSON.parse(data);
+                    // Anthropic SSE format: { type: 'content_block_delta', delta: { text: "..." } }
+                    if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                      // Convert to OpenAI-compatible format for frontend
+                      const openaiFormat = JSON.stringify({
+                        choices: [{
+                          delta: {
+                            content: parsed.delta.text
+                          }
+                        }]
+                      });
+                      res.write(`data: ${openaiFormat}\n\n`);
+                    }
+                  } catch (e) {
+                    // Ignore parse errors for non-JSON lines
+                  }
+                } else if (line.trim()) {
+                  // Forward other lines as-is
+                  res.write(line + '\n');
+                }
+              }
+            }
+          } catch (error) {
+            console.log('   ❌ Server Error:', error.message);
+            res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+            res.end();
+          }
+          return;
+        }
+
+        // Default: OpenAI
         console.log('   ✅ Calling OpenAI API...');
 
         // Call OpenAI

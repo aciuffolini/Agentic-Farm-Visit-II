@@ -31,7 +31,8 @@ export interface ChatResponse {
  */
 export async function* streamChat(
   messages: ChatMessage[],
-  meta?: ChatRequest['meta']
+  meta?: ChatRequest['meta'],
+  provider?: string
 ): AsyncGenerator<string> {
   // Build headers with optional user API key
   const headers: Record<string, string> = {
@@ -47,8 +48,12 @@ export async function* streamChat(
     console.warn('[API] No API key found in localStorage');
   }
   
-  // Optional: Add provider selection header (future)
-  // if (provider) headers['X-Provider'] = provider;
+  // Add provider selection header if specified
+  if (provider) {
+    headers['X-Provider'] = provider;
+    headers['X-Model'] = provider; // Also send as model for server routing
+    console.log('[API] Using provider:', provider);
+  }
 
   const url = `${API_BASE}/chat`;
   console.log('[API] Request URL:', url);
