@@ -74,7 +74,8 @@ export default defineConfig(({ mode }) => {
   // GitHub Pages base path - set via VITE_BASE_PATH env variable
   // For GitHub Pages: VITE_BASE_PATH=/Agentic-Farm-Visit/
   // For local dev or custom domain: VITE_BASE_PATH=/
-  const basePath = process.env.VITE_BASE_PATH || '/';
+  // Default to GitHub Pages path for production builds
+  const basePath = process.env.VITE_BASE_PATH || (process.env.NODE_ENV === 'production' ? '/Agentic-Farm-Visit/' : '/');
   
   return {
     base: basePath,
