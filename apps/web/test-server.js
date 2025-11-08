@@ -31,9 +31,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Visits endpoints (mock responses for testing)
+  // Visits endpoints (simple storage - in production, connect to database)
   if (req.url === '/api/visits' && req.method === 'GET') {
-    console.log('\n📋 GET /api/visits (mock response)');
+    console.log('\n📋 GET /api/visits');
     res.setHeader('Content-Type', 'application/json');
     res.writeHead(200);
     res.end(JSON.stringify({ 
@@ -50,16 +50,16 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const visit = JSON.parse(body);
-        console.log('\n💾 POST /api/visits (mock save)');
+        console.log('\n💾 POST /api/visits');
         console.log('   Visit ID:', visit.id);
         console.log('   Field:', visit.field_id || 'N/A');
         
-        // Mock successful save
+        // In production, save to database here
         res.setHeader('Content-Type', 'application/json');
         res.writeHead(200);
         res.end(JSON.stringify({ 
           success: true,
-          id: visit.id || 'mock-id-' + Date.now()
+          id: visit.id || 'visit-' + Date.now()
         }));
       } catch (error) {
         console.log('   ❌ Parse Error:', error.message);
@@ -172,59 +172,99 @@ const server = http.createServer(async (req, res) => {
             let chunkCount = 0;
             let buffer = '';
 
-            while (true) {
-              const { value, done } = await reader.read();
-              if (done) {
-                res.write('data: [DONE]\n\n');
-                res.end();
-                console.log(`   ✅ Stream complete (${chunkCount} chunks)\n`);
-                break;
-              }
-              
-              chunkCount++;
-              buffer += decoder.decode(value, { stream: true });
-              
-              // Process SSE lines
-              const lines = buffer.split(/\r?\n/);
-              buffer = lines.pop() || '';
-              
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6).trim();
-                  if (data === '[DONE]') {
-                    res.write('data: [DONE]\n\n');
-                    res.end();
-                    console.log(`   ✅ Stream complete (${chunkCount} chunks)\n`);
-                    return;
-                  }
-                  
-                  try {
-                    const parsed = JSON.parse(data);
-                    // Anthropic SSE format: { type: 'content_block_delta', delta: { text: "..." } }
-                    if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-                      // Convert to OpenAI-compatible format for frontend
-                      const openaiFormat = JSON.stringify({
-                        choices: [{
-                          delta: {
-                            content: parsed.delta.text
-                          }
-                        }]
-                      });
-                      res.write(`data: ${openaiFormat}\n\n`);
+            try {
+              while (true) {
+                const { value, done } = await reader.read();
+                if (done) {
+                  // Flush any remaining buffer
+                  if (buffer.trim()) {
+                    const lines = buffer.split(/\r?\n/);
+                    for (const line of lines) {
+                      if (line.startsWith('data: ')) {
+                        res.write(line + '\n');
+                      }
                     }
-                  } catch (e) {
-                    // Ignore parse errors for non-JSON lines
                   }
-                } else if (line.trim()) {
-                  // Forward other lines as-is
-                  res.write(line + '\n');
+                  res.write('data: [DONE]\n\n');
+                  res.end();
+                  console.log(`   ✅ Stream complete (${chunkCount} chunks)\n`);
+                  break;
                 }
+                
+                chunkCount++;
+                buffer += decoder.decode(value, { stream: true });
+                
+                // Process complete SSE lines
+                const lines = buffer.split(/\r?\n/);
+                buffer = lines.pop() || '';
+                
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    const data = line.slice(6).trim();
+                    if (data === '[DONE]') {
+                      res.write('data: [DONE]\n\n');
+                      res.end();
+                      console.log(`   ✅ Stream complete (${chunkCount} chunks)\n`);
+                      return;
+                    }
+                    
+                    try {
+                      const parsed = JSON.parse(data);
+                      // Anthropic SSE format: { type: 'content_block_delta', delta: { text: "..." } }
+                      if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                        // Convert to OpenAI-compatible format for frontend
+                        const openaiFormat = JSON.stringify({
+                          choices: [{
+                            delta: {
+                              content: parsed.delta.text
+                            }
+                          }]
+                        });
+                        res.write(`data: ${openaiFormat}\n\n`);
+                      }
+                    } catch (e) {
+                      // Skip invalid JSON lines (comments, etc.)
+                      if (data && !data.startsWith(':')) {
+                        console.warn('   ⚠️ Skipping invalid JSON line:', data.substring(0, 50));
+                      }
+                    }
+                  } else if (line.trim() && !line.startsWith(':')) {
+                    // Forward non-comment lines
+                    res.write(line + '\n');
+                  }
+                }
+              }
+            } catch (streamError) {
+              console.log('   ❌ Anthropic Stream Error:', streamError.message);
+              if (!res.headersSent) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ 
+                  error: 'Stream error',
+                  message: streamError.message
+                }));
+              } else {
+                res.write(`data: ${JSON.stringify({ error: streamError.message, type: 'error' })}\n\n`);
+                res.end();
               }
             }
           } catch (error) {
-            console.log('   ❌ Server Error:', error.message);
-            res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
-            res.end();
+            console.log('   ❌ Anthropic API Error:', error.message);
+            console.log('   Stack:', error.stack);
+            
+            // If headers not sent yet, send proper error response
+            if (!res.headersSent) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ 
+                error: 'Anthropic API error',
+                message: error.message,
+                hint: 'Check your API key and Anthropic account status'
+              }));
+            } else {
+              // Headers already sent (SSE started), send error in stream
+              res.write(`data: ${JSON.stringify({ error: error.message, type: 'error' })}\n\n`);
+              res.end();
+            }
+            return;
           }
           return;
         }
@@ -287,39 +327,103 @@ Respond in a friendly, professional manner suitable for field work.`
 
           if (!openaiRes.ok) {
             const errorText = await openaiRes.text();
-            console.log('   ❌ OpenAI Error:', openaiRes.status, errorText.substring(0, 100));
-            res.write(`data: ${JSON.stringify({ error: errorText, status: openaiRes.status })}\n\n`);
-            res.end();
+            console.log('   ❌ OpenAI Error:', openaiRes.status, errorText.substring(0, 200));
+            
+            // Send proper error response (not in SSE format since we haven't started streaming)
+            if (!res.headersSent) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ 
+                error: 'OpenAI API error',
+                message: errorText,
+                status: openaiRes.status,
+                hint: 'Check your API key and OpenAI account status'
+              }));
+            } else {
+              // Headers already sent, send error in stream
+              res.write(`data: ${JSON.stringify({ error: errorText, status: openaiRes.status, type: 'error' })}\n\n`);
+              res.end();
+            }
             return;
           }
 
           console.log('   ✅ Streaming response...');
 
-          // Stream response
+          // DIRECT PASSTHROUGH - No manipulation, just forward bytes
           const reader = openaiRes.body.getReader();
           const decoder = new TextDecoder();
           let chunkCount = 0;
 
-          while (true) {
-            const { value, done } = await reader.read();
-            if (done) {
-              res.write('data: [DONE]\n\n');
-              res.end();
-              console.log(`   ✅ Stream complete (${chunkCount} chunks)\n`);
-              break;
+          try {
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) {
+                // Final flush
+                try {
+                  const finalDecoded = decoder.decode();
+                  if (finalDecoded) {
+                    res.write(finalDecoded);
+                  }
+                } catch (e) {
+                  // Ignore
+                }
+                res.write('data: [DONE]\n\n');
+                res.end();
+                console.log(`   ✅ Stream complete (${chunkCount} chunks)\n`);
+                break;
+              }
+              
+              chunkCount++;
+              // Decode and write - OpenAI already sends proper SSE format
+              const decoded = decoder.decode(value, { stream: true });
+              res.write(decoded);
             }
-            chunkCount++;
-            res.write(decoder.decode(value));
+          } catch (streamError) {
+            console.log('   ❌ Stream Error:', streamError.message);
+            if (!res.headersSent) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ 
+                error: 'Stream error',
+                message: streamError.message
+              }));
+            } else {
+              res.write(`data: ${JSON.stringify({ error: streamError.message, type: 'error' })}\n\n`);
+              res.end();
+            }
           }
         } catch (error) {
-          console.log('   ❌ Server Error:', error.message);
-          res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
-          res.end();
+          console.log('   ❌ OpenAI API Error:', error.message);
+          console.log('   Stack:', error.stack);
+          
+          // If headers not sent yet, send proper error response
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+              error: 'OpenAI API error',
+              message: error.message,
+              hint: 'Check your API key and OpenAI account status'
+            }));
+          } else {
+            // Headers already sent (SSE started), send error in stream
+            res.write(`data: ${JSON.stringify({ error: error.message, type: 'error' })}\n\n`);
+            res.end();
+          }
         }
       } catch (error) {
         console.log('   ❌ Parse Error:', error.message);
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: error.message }));
+        console.log('   Stack:', error.stack);
+        if (!res.headersSent) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Parse error', message: error.message }));
+        }
+      }
+    });
+    
+    // Handle request errors
+    req.on('error', (error) => {
+      console.log('   ❌ Request Error:', error.message);
+      if (!res.headersSent) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Request error', message: error.message }));
       }
     });
   } else {

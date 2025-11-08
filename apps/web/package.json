@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:all": "npm run dev:server & npm run dev",
+    "dev:server": "node test-server.js",
     "build": "vite build",
     "build:android": "vite build --mode android",
     "preview": "vite preview",

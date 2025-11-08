@@ -350,7 +350,18 @@ export function FieldVisit() {
 
           {/* GPS Status */}
           <div className="text-xs text-slate-600 min-h-[1.25rem]">
-            {gps ? `GPS: ${gps.lat.toFixed(6)}, ${gps.lon.toFixed(6)} (±${gps.acc}m)` : gpsError || 'No GPS'}
+            {gpsLoading && <span className="text-blue-600">Getting GPS...</span>}
+            {!gpsLoading && gps && (
+              <span className="text-green-600">
+                ✅ GPS: {gps.lat.toFixed(6)}, {gps.lon.toFixed(6)} (±{gps.acc.toFixed(0)}m)
+              </span>
+            )}
+            {!gpsLoading && !gps && gpsError && (
+              <span className="text-red-600">❌ {gpsError}</span>
+            )}
+            {!gpsLoading && !gps && !gpsError && (
+              <span className="text-slate-400">📍 Click "Get GPS" to detect location</span>
+            )}
           </div>
 
           {/* Voice Note */}
