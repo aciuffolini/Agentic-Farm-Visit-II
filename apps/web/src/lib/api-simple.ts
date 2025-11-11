@@ -45,6 +45,10 @@ export async function* simpleStreamChat(
     throw new Error('API key required');
   }
 
+  // Auto-detect API base URL
+  const apiBase = await getApiBase();
+  const url = `${apiBase}/chat`;
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-API-Key': apiKey,
@@ -54,6 +58,8 @@ export async function* simpleStreamChat(
     headers['X-Provider'] = provider;
     headers['X-Model'] = provider;
   }
+
+  console.log('[API-Simple] Using API base:', apiBase);
 
   const response = await fetch(url, {
     method: 'POST',
