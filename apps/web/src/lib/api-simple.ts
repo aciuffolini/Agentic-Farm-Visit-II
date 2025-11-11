@@ -1,9 +1,37 @@
 /**
  * SIMPLE API - No complex parsing, just make it work
+ * Auto-detects local server or uses production API
  */
 
 import { ChatMessage } from '@farm-visit/shared';
 import { getUserApiKey } from './config/userKey';
+import { Capacitor } from '@capacitor/core';
+
+/**
+ * Get API base URL - auto-detects local server or uses production
+ */
+async function getApiBase(): Promise<string> {
+  // Android/iOS - use production API (no local server needed)
+  if (Capacitor.isNativePlatform()) {
+    return import.meta.env.VITE_API_URL || 'https://your-api-server.com';
+  }
+  
+  // Web - try local server first, fallback to production
+  try {
+    const response = await fetch('http://localhost:3000/health', { 
+      method: 'GET',
+      signal: AbortSignal.timeout(1000) // 1 second timeout
+    });
+    if (response.ok) {
+      return '/api'; // Use local proxy (Vite will proxy to localhost:3000)
+    }
+  } catch {
+    // Local server not running, use production API
+    return import.meta.env.VITE_API_URL || 'https://your-api-server.com';
+  }
+  
+  return '/api'; // Default to local proxy
+}
 
 /**
  * Ultra-simple chat streaming - uses fetch with manual SSE parsing
@@ -19,18 +47,15 @@ export async function* simpleStreamChat(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-API-Key': apiKey,
   };
-  
-  if (apiKey) {
-    headers['X-API-Key'] = apiKey;
-  }
   
   if (provider) {
     headers['X-Provider'] = provider;
     headers['X-Model'] = provider;
   }
 
-  const response = await fetch('/api/chat', {
+  const response = await fetch(url, {
     method: 'POST',
     headers,
     body: JSON.stringify({ messages }),
