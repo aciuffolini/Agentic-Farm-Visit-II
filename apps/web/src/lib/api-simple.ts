@@ -13,7 +13,16 @@ import { Capacitor } from '@capacitor/core';
 async function getApiBase(): Promise<string> {
   // Android/iOS - use production API (no local server needed)
   if (Capacitor.isNativePlatform()) {
-    return import.meta.env.VITE_API_URL || 'https://your-api-server.com';
+    const prodUrl = import.meta.env.VITE_API_URL;
+    if (!prodUrl) {
+      // For Android, we need a production API URL
+      // If not set, throw clear error
+      throw new Error(
+        'VITE_API_URL not configured. Android requires a production API server. ' +
+        'Set VITE_API_URL in your .env file or build configuration.'
+      );
+    }
+    return prodUrl;
   }
   
   // Web - try local server first, fallback to production
@@ -26,8 +35,17 @@ async function getApiBase(): Promise<string> {
       return '/api'; // Use local proxy (Vite will proxy to localhost:3000)
     }
   } catch {
-    // Local server not running, use production API
-    return import.meta.env.VITE_API_URL || 'https://your-api-server.com';
+    // Local server not running, try production API
+    const prodUrl = import.meta.env.VITE_API_URL;
+    if (prodUrl) {
+      return prodUrl;
+    }
+    // No local server and no production URL - show helpful error
+    throw new Error(
+      'No API server available. ' +
+      'Start local server: node test-server.js (in apps/web directory) ' +
+      'OR set VITE_API_URL environment variable for production API.'
+    );
   }
   
   return '/api'; // Default to local proxy
