@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+    command: pnpm run dev
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - '11434:11434'
