@@ -20,7 +20,7 @@
 
 ### 🎯 **One-Click Download**
 
-[![Download APK](https://img.shields.io/badge/Download-APK_v1.0.9-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK_v1.1.0-success?style=for-the-badge&logo=android&logoColor=white)](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest/download/app-debug.apk)
 
 **Or visit**: [Latest Release](https://github.com/aciuffolini/Agentic-Farm-Visit/releases/latest)
 

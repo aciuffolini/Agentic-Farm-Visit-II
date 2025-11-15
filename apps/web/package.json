@@ -16,7 +16,6 @@
     "android:sync": "npx cap sync android"
   },
   "dependencies": {
-    "@farm-visit/shared": "workspace:*",
     "@capacitor/android": "^6.0.2",
     "@capacitor/camera": "^6.0.2",
     "@capacitor/core": "^6.0.2",
@@ -24,6 +23,7 @@
     "@capacitor/geolocation": "^6.0.2",
     "@capacitor/splash-screen": "^6.0.2",
     "@capacitor/status-bar": "^6.0.2",
+    "@farm-visit/shared": "workspace:*",
     "dexie": "^4.2.1",
     "framer-motion": "^11.11.1",
     "jszip": "^3.10.1",
@@ -45,4 +45,3 @@
     "vite-plugin-pwa": "^1.1.0"
   }
 }
-
