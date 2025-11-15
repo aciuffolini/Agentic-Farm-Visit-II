@@ -1,5 +1,5 @@
 ext {
-    minSdkVersion = 24  // Android 7.0 - required for ML Kit GenAI
+    minSdkVersion = 22
     compileSdkVersion = 34
     targetSdkVersion = 34
     androidxActivityVersion = '1.8.0'

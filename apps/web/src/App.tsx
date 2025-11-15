@@ -4,6 +4,7 @@ import { FieldVisit } from './components/FieldVisit';
 import { ChatDrawer } from './components/ChatDrawer';
 import { PasswordPrompt } from './components/PasswordPrompt';
 import { outbox } from './lib/outbox';
+import UpdatePrompt from './components/UpdatePrompt';
 
 function App() {
   const [chatOpen, setChatOpen] = useState(false);
@@ -65,6 +66,7 @@ function App() {
       </main>
 
       <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />
+      <UpdatePrompt />
     </div>
   );
 }

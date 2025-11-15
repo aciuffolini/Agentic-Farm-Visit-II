@@ -31,6 +31,7 @@ export type Visit = z.infer<typeof VisitSchema>;
 export const ChatMessageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
   content: z.string(),
+  source: z.enum(["local", "cloud"]).optional(),
 });
 
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;

@@ -1,21 +1,13 @@
-/**
- * API Client
- * Handles HTTP requests and SSE streaming
- */
-
 import { ChatMessage, Visit } from '@farm-visit/shared';
 import { getUserApiKey } from './config/userKey';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-/**
- * Check if the test server is running
- */
 export async function checkServerHealth(): Promise<boolean> {
   try {
-    const response = await fetch('/api/health', {
+    const response = await fetch(`${API_BASE}/ping`, {
       method: 'GET',
-      signal: AbortSignal.timeout(2000), // 2 second timeout
+      signal: AbortSignal.timeout(2000),
     });
     return response.ok;
   } catch {
@@ -41,99 +33,36 @@ export interface ChatResponse {
   model?: string;
 }
 
-/**
- * Stream chat response (SSE)
- */
 export async function* streamChat(
   messages: ChatMessage[],
   meta?: ChatRequest['meta'],
   provider?: string
 ): AsyncGenerator<string> {
-  // Build headers with optional user API key
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  
-  // Add user API key if available (per-device, stored locally)
+
   const userKey = getUserApiKey();
   if (userKey) {
     headers['X-API-Key'] = userKey;
-    console.log('[API] Using user-provided API key:', userKey.substring(0, 10) + '...');
-  } else {
-    console.warn('[API] No API key found in localStorage');
   }
-  
-  // Add provider selection header if specified
+
   if (provider) {
     headers['X-Provider'] = provider;
-    headers['X-Model'] = provider; // Also send as model for server routing
-    console.log('[API] Using provider:', provider);
   }
 
-  const url = `${API_BASE}/chat`;
-  console.log('[API] Request URL:', url);
-  console.log('[API] Request headers:', { ...headers, 'X-API-Key': headers['X-API-Key'] ? `${headers['X-API-Key'].substring(0, 10)}...` : 'NOT SET' });
-  console.log('[API] Request body:', { messages: messages.length, meta });
+  const url = `${API_BASE}/api/chat`;
 
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ messages, meta }),
-      // Add timeout to prevent hanging
-      signal: AbortSignal.timeout(30000), // 30 second timeout
-    });
-  } catch (fetchError: any) {
-    // Handle network errors (ECONNREFUSED, network failures, etc.)
-    const errorMsg = fetchError?.message || String(fetchError);
-    const errorName = fetchError?.name || '';
-    
-    // Check for connection refused errors
-    if (errorMsg.includes('ECONNREFUSED') || 
-        errorMsg.includes('Failed to fetch') ||
-        errorMsg.includes('NetworkError') ||
-        errorMsg.includes('ERR_CONNECTION_REFUSED') ||
-        errorMsg.includes('AbortError') ||
-        errorName === 'TypeError' ||
-        errorName === 'AbortError') {
-      
-      // More specific error message
-      if (errorMsg.includes('AbortError') || errorName === 'AbortError') {
-        throw new Error('Request timeout. The server may not be running or is taking too long to respond. Start the test server with: node test-server.js');
-      }
-      
-      throw new Error('Cannot connect to API server. The test server is not running. Start it with: node test-server.js in the apps/web folder');
-    }
-    throw new Error(`Network error: ${errorMsg}`);
-  }
-  
-  console.log('[API] Response status:', response.status, response.statusText);
-  console.log('[API] Response headers:', Object.fromEntries(response.headers.entries()));
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ messages, meta }),
+    signal: AbortSignal.timeout(30000),
+  });
 
   if (!response.ok) {
-    // Handle 503 (Service Unavailable) - server not running
-    if (response.status === 503) {
-      try {
-        const errorData = await response.json();
-        throw new Error(`API server unavailable: ${errorData.message || 'Test server is not running. Start it with: node test-server.js'}`);
-      } catch {
-        throw new Error('API server unavailable. Test server is not running. Start it with: node test-server.js');
-      }
-    }
-    
-    const text = await response.text();
-    let errorMessage = `Chat API error: ${response.status}`;
-    
-    // Try to parse error message
-    try {
-      const errorData = JSON.parse(text);
-      errorMessage = errorData.message || errorData.error || errorMessage;
-    } catch {
-      if (text) errorMessage += ` ${text}`;
-    }
-    
-    throw new Error(errorMessage);
+    const errorText = await response.text();
+    throw new Error(`Chat API error: ${response.status} ${errorText}`);
   }
 
   if (!response.body) {
@@ -157,22 +86,16 @@ export async function* streamChat(
         if (line.startsWith('data: ')) {
           const data = line.slice(6).trim();
           if (data === '[DONE]') {
-            console.log('[API] Stream complete');
             return;
           }
-          
+
           try {
             const parsed = JSON.parse(data);
-            // OpenAI SSE format: { choices: [{ delta: { content: "..." } }] }
-            const content = parsed.choices?.[0]?.delta?.content || parsed.token || '';
-            if (content) {
-              yield content;
+            if (parsed.token) {
+              yield parsed.token;
             }
           } catch (e) {
-            // Not JSON, yield as-is (fallback)
-            if (data && data !== '') {
-              yield data;
-            }
+            console.error('Error parsing SSE data:', e);
           }
         }
       }
@@ -182,9 +105,6 @@ export async function* streamChat(
   }
 }
 
-/**
- * Save visit to server
- */
 export async function saveVisit(visit: Visit): Promise<{ success: boolean; id: string }> {
   const response = await fetch(`${API_BASE}/visits`, {
     method: 'POST',
@@ -200,9 +120,6 @@ export async function saveVisit(visit: Visit): Promise<{ success: boolean; id: s
   return response.json();
 }
 
-/**
- * Get list of visits from server
- */
 export async function getVisits(params?: {
   limit?: number;
   offset?: number;
@@ -212,12 +129,10 @@ export async function getVisits(params?: {
   if (params?.offset) searchParams.set('offset', params.offset.toString());
 
   const response = await fetch(`${API_BASE}/visits?${searchParams}`);
-  
+
   if (!response.ok) {
     throw new Error(`Get visits error: ${response.status}`);
   }
 
   return response.json();
 }
-
-
