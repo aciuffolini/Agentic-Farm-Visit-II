@@ -1,12 +1,12 @@
 /**
- * Chat Drawer Component - SIMPLIFIED VERSION
- * Just makes the chatbot work - minimal implementation
+ * Chat Drawer Component - HYBRID VERSION
+ * Uses LLMService for online/offline inference
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatMessage } from '@farm-visit/shared';
-import { simpleLLM } from '../lib/llm/SimpleLLM';
+import { llmService } from '../lib/llm/service';
 import { getUserApiKey, setUserApiKey } from '../lib/config/userKey';
 
 interface ChatDrawerProps {
@@ -19,30 +19,20 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   const [busy, setBusy] = useState(false);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKey, setApiKey] = useState(getUserApiKey());
-  
+
   const initialMessage = useMemo(() => {
-    const hasKey = getUserApiKey();
-    if (!hasKey) {
-      return {
-        role: 'assistant' as const,
-        content: '👋 Hi! This app uses **Cloud AI only** (no local models).\n\nTo start chatting:\n1. Click the 🔑 button above\n2. Enter your OpenAI or Anthropic API key\n3. Start chatting!\n\n**Note:** Requires internet connection and API key.'
-      };
-    }
     return {
       role: 'assistant' as const,
-      content: 'Hi! Ask me anything about your field visit!'
+      content: 'Hi! Ask me anything about your field visit. An internet connection and an API key are required.',
     };
   }, []);
-  
+
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
-  
+
   useEffect(() => {
     if (open) {
       const currentKey = getUserApiKey();
       setApiKey(currentKey);
-      if (!currentKey && navigator.onLine) {
-        setTimeout(() => setShowApiKeyInput(true), 1000);
-      }
     }
   }, [open]);
 
@@ -50,10 +40,13 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     setUserApiKey(apiKey);
     setShowApiKeyInput(false);
     if (apiKey) {
-      setMessages((m) => [...m, { 
-        role: 'assistant', 
-        content: '✅ API key saved! You can now chat.' 
-      }]);
+      setMessages((m) => [
+        ...m,
+        {
+          role: 'assistant',
+          content: '✅ API key saved! You can now chat.',
+        },
+      ]);
     }
   };
 
@@ -70,44 +63,26 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     setMessages((m) => [...m, assistantMsg]);
 
     try {
-      console.log('[ChatDrawer] Sending:', userInput.substring(0, 50));
+      const generator = llmService.chat([{ role: 'user', content: userInput }]);
 
-      // SIMPLE - Just use SimpleLLM
-      const generator = simpleLLM.stream({
-        text: userInput,
-      });
-
-      let hasResponse = false;
-      for await (const chunk of generator) {
-        hasResponse = true;
+      for await (const { token, source } of generator) {
         setMessages((m) => {
           const copy = [...m];
           const last = copy[copy.length - 1];
           if (last && last.role === 'assistant') {
-            copy[copy.length - 1] = { ...last, content: last.content + chunk };
+            copy[copy.length - 1] = {
+              ...last,
+              content: last.content + token,
+              source: source,
+            };
           }
           return copy;
         });
       }
-
-      if (!hasResponse) {
-        throw new Error('No response received');
-      }
     } catch (err: any) {
       console.error('[ChatDrawer] Error:', err);
       const errMsg = err.message || String(err);
-      let errorMessage = `❌ Error: ${errMsg}\n\n`;
-      
-      if (errMsg.includes('API key')) {
-        errorMessage += 'Set your API key using the 🔑 button above.';
-      } else if (errMsg.includes('server') || errMsg.includes('ECONNREFUSED')) {
-        errorMessage += 'Start the test server: `node apps/web/test-server.js`';
-      } else if (errMsg.includes('offline') || errMsg.includes('internet')) {
-        errorMessage += 'Check your internet connection.';
-      } else {
-        errorMessage += 'Check the server console for details.';
-      }
-      
+      const errorMessage = `❌ Error: ${errMsg}`;
       setMessages((m) => {
         const copy = [...m];
         const last = copy[copy.length - 1];
@@ -186,7 +161,9 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
               {messages.map((m, i) => (
                 <div
                   key={i}
-                  className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${
+                    m.role === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
                 >
                   <div
                     className={`max-w-[80%] rounded-lg px-3 py-2 ${
